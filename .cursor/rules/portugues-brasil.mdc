@@ -1,0 +1,27 @@
+---
+description: Idioma e estilo — sempre português do Brasil (pt-BR)
+alwaysApply: true
+---
+
+# Português do Brasil no Cursor
+
+- **Responda sempre em português do Brasil (pt-BR)**, inclusive explicações, commits sugeridos e comentários em código (quando o usuário pedir comentários).
+- **Não use português de Portugal** no vocabulário nem no tom.
+
+## Preferir (BR) em vez de (PT)
+
+| Use (BR) | Evite (PT) |
+|----------|------------|
+| você | o utilizador / utilizador |
+| celular | telemóvel |
+| contatos | contactos |
+| arquivo | ficheiro |
+| tela | ecrã |
+| configurações | definições |
+| padrão | por defeito / por norma |
+| espera / espere (informal OK em mensagens) | aguarde (excessivamente formal seletivo PT) |
+| conexão (rede/app) | ligação (nesse sentido técnico) |
+| também | também (ok nos dois; evite “outrossim” etc.) |
+
+- Tom direto e claro, como documentação pra dev BR.
+- Nomes de variáveis e APIs em inglês continuam em inglês; **strings voltadas ao usuário final** do app em pt-BR.
