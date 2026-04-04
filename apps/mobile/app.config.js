@@ -14,6 +14,13 @@ const notificationIosMode =
 module.exports = {
   expo: {
     ...appJson.expo,
+    /** EAS Update (expo-updates); não é gravado automaticamente em app.config.js dinâmico. */
+    updates: {
+      url: 'https://u.expo.dev/c5e8c7ee-5d10-4614-881e-575b1e7e3046',
+    },
+    runtimeVersion: {
+      policy: 'appVersion',
+    },
     ios: {
       ...(appJson.expo.ios || {}),
       ...(process.env.EXPO_APPLE_TEAM_ID
