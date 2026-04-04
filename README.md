@@ -41,10 +41,11 @@ npx expo start
 
 ### EAS (builds para lojas)
 
-1. `npm install -g eas-cli` e `eas login`
-2. `cd apps/mobile && eas init` (associa o projeto e grava o `projectId`)
-3. `npm run eas:preview` — APK interno (Android) com tráfego HTTP permitido se precisar de API local
-4. `npm run eas:production` — AAB (Android) / IPA para submissão; **sem** cleartext por defeito
+1. `cd apps/mobile && npm install` (o **`eas-cli`** está em `devDependencies`; não precisa de `-g`).
+2. `npx eas login` (uma vez por máquina/conta Expo).
+3. `npx eas init` (associa o projeto e grava o `projectId`).
+4. `npm run eas:preview` — APK interno (Android) com tráfego HTTP permitido se precisar de API local.
+5. `npm run eas:production` — AAB (Android) / IPA para submissão; **sem** cleartext por defeito.
 
 Metadados sugeridos (Play / Apple / Data Safety): pasta **`apps/mobile/store/`**. Submissão: **`store/SUBMIT.md`**.
 

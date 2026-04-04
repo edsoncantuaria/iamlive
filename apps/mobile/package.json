@@ -45,6 +45,7 @@
   "devDependencies": {
     "@expo/prebuild-config": "~54.0.8",
     "@types/react": "~19.1.0",
+    "eas-cli": "^18.5.0",
     "typescript": "~5.9.2"
   },
   "private": true
