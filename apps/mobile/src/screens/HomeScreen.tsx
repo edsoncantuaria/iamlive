@@ -89,13 +89,13 @@ export default function HomeScreen() {
   }, [checkIn]);
 
   const handleHeroPress = useCallback(async () => {
-    if (st === 'safe' || overlayBusy) return;
+    if (overlayBusy) return;
     await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setOverlayBusy(true);
     setOverlayQuote(randomMotivationalQuote());
     setOverlayFillColors(randomCheckInGradient());
     setFillTick((n) => n + 1);
-  }, [st, overlayBusy]);
+  }, [overlayBusy]);
 
   useEffect(() => {
     const id = setInterval(() => setTick((x) => x + 1), 1000);
@@ -117,17 +117,17 @@ export default function HomeScreen() {
   const g = btnGradient(st);
   const prog = progressPercent(config);
 
-  const isValidated = st === 'safe';
-  const heroTitle = isValidated
-    ? 'Check-in feito'
-    : st === 'expired'
-      ? 'Estou aqui'
-      : 'Estou vivo';
-  const heroSub = isValidated
-    ? 'Tire um tempo para você: autocuidado e amor também contam.'
-    : st === 'expired'
-      ? 'Confirme para pausar o alerta'
-      : 'Um toque, um respiro';
+  /** Em `safe` o botão mostra ✓ e calma (`resting`), mas continua tocável para renovar o prazo. */
+  const heroTitle =
+    st === 'safe' ? 'Check-in feito' : st === 'expired' ? 'Estou aqui' : 'Estou vivo';
+  const heroSub =
+    st === 'safe'
+      ? 'Descansa — toque de novo só se quiser reiniciar o limite'
+      : st === 'expired'
+        ? 'Confirme para pausar o alerta'
+        : st === 'neverChecked'
+          ? 'Um toque, um respiro'
+          : 'Confirme que está bem';
 
   if (!ready) {
     return (
@@ -180,14 +180,21 @@ export default function HomeScreen() {
       <View style={styles.centerCol}>
         <AnimatedStatusLabel text={label.text} color={label.color} statusKey={st} />
 
+        {st === 'safe' ? (
+          <Text style={styles.safeRibbon}>
+            Limite longe — está tudo em dia. O botão continua disponível se quiser antecipar o próximo
+            ciclo.
+          </Text>
+        ) : null}
+
         <HeroCheckInButton
           size={BTN}
           gradient={g}
           centerVariant={0}
           title={heroTitle}
           subtitle={heroSub}
-          paperActive
-          mode={isValidated ? 'validated' : 'action'}
+          paperActive={st !== 'safe'}
+          mode={st === 'safe' ? 'resting' : 'action'}
           onPress={handleHeroPress}
         />
 
@@ -253,6 +260,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   centerCol: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 24, zIndex: 2 },
+  safeRibbon: {
+    fontSize: 13,
+    color: colors.warmGray,
+    textAlign: 'center',
+    lineHeight: 19,
+    maxWidth: 300,
+    marginBottom: 14,
+    marginTop: -4,
+    paddingHorizontal: 8,
+  },
   countBlock: { marginTop: 28, width: '100%', maxWidth: 320, alignItems: 'center' },
   countLabel: {
     fontSize: 12,

@@ -26,8 +26,12 @@ type Props = {
   centerVariant: number;
   onPress: () => void;
   paperActive: boolean;
-  /** Check-in já registrado e prazo longe — mostra ✓ e não aceita novo toque. */
-  mode?: 'action' | 'validated';
+  /**
+   * `action` — destaque e pulso, marca central.
+   * `resting` — ✓ e calma (sem pulso), mas continua tocável para renovar o prazo.
+   * `validated` — ✓ e toque desativado (só se precisar bloquear noutro ecrã).
+   */
+  mode?: 'action' | 'resting' | 'validated';
 };
 
 export function HeroCheckInButton({
@@ -43,9 +47,11 @@ export function HeroCheckInButton({
   const pulse = useSharedValue(1);
   const press = useSharedValue(1);
   const validated = mode === 'validated';
+  const resting = mode === 'resting';
+  const calmVisual = validated || resting;
 
   useEffect(() => {
-    if (validated) {
+    if (calmVisual) {
       pulse.value = 1;
       return;
     }
@@ -54,7 +60,7 @@ export function HeroCheckInButton({
       -1,
       true,
     );
-  }, [pulse, validated]);
+  }, [pulse, calmVisual]);
 
   const wrapStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pulse.value * press.value }],
@@ -75,7 +81,7 @@ export function HeroCheckInButton({
         <OrbitingCarousel radius={ringR} />
       </View>
       <View style={styles.paperSlot}>
-        <PaperStackLayers size={size + 10} active={validated ? false : paperActive} />
+        <PaperStackLayers size={size + 10} active={calmVisual ? false : paperActive} />
       </View>
 
       <View style={styles.centerOverlay}>
@@ -97,7 +103,11 @@ export function HeroCheckInButton({
             disabled={validated}
             accessibilityState={{ disabled: validated }}
             accessibilityHint={
-              validated ? 'Check-in já registrado. Novo lembrete quando faltar menos tempo.' : undefined
+              validated
+                ? 'Check-in já registrado. Novo lembrete quando faltar menos tempo.'
+                : resting
+                  ? 'Toque para renovar o prazo do check-in e avisar os contatos mais tarde.'
+                  : undefined
             }
             onPressIn={() => {
               if (validated) return;
@@ -113,7 +123,7 @@ export function HeroCheckInButton({
                 colors={[...gradient]}
                 style={[styles.btn, { width: size, height: size, borderRadius: size / 2 }]}
               >
-                {validated ? (
+                {calmVisual ? (
                   <Ionicons
                     name="checkmark-circle"
                     size={Math.max(36, size * 0.26)}
