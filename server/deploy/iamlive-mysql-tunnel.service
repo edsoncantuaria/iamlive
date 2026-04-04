@@ -1,0 +1,14 @@
+[Unit]
+Description=Tunel SSH para MariaDB (iamlive)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+Restart=always
+RestartSec=5
+ExecStart=/usr/bin/ssh -N -i /home/ubuntu/.ssh/id_ed25519 -o BatchMode=yes -o StrictHostKeyChecking=yes -o ExitOnForwardFailure=yes -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -L 127.0.0.1:3307:127.0.0.1:3306 alpine@137.131.168.10
+
+[Install]
+WantedBy=multi-user.target

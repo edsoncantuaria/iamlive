@@ -1,0 +1,16 @@
+[Unit]
+Description=iamlive API (Estou Vivo)
+After=network-online.target iamlive-mysql-tunnel.service
+Requires=iamlive-mysql-tunnel.service
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/iamlive/server
+EnvironmentFile=/home/ubuntu/iamlive/server/.env
+ExecStart=/usr/bin/npm start
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
