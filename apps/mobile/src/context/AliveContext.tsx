@@ -10,22 +10,17 @@ import { Alert } from 'react-native';
 import type { AppConfig, EmergencyContact } from '../lib/appState';
 import { DEFAULT_REMINDER_IDS, type ReminderOffsetId } from '../lib/reminderOffsets';
 import { aliveStatus, deadlineOf, isExpired } from '../lib/appState';
-import {
-  installNotificationHandlerIfSupported,
-  requestNotificationPermissionsSafe,
-  scheduleReminders,
-} from '../lib/notifications';
+import { requestNotificationPermissionsSafe, scheduleReminders } from '../lib/notifications';
 import { syncHomeWidgetsFromConfig } from '../lib/syncHomeWidgets';
 import * as storage from '../lib/storage';
-import { CLIENT_TOKEN } from '../config';
-import { getSocket } from '../socket';
-
-installNotificationHandlerIfSupported();
+import { ensureSocket } from '../socket';
 
 /** Aviso enviado ao cadastrar — a pessoa fica ciente do papel de contato de confiança. */
-async function sendWelcomeNoticeToContact(c: EmergencyContact): Promise<void> {
-  if (!CLIENT_TOKEN) return;
-  const sock = getSocket();
+async function sendWelcomeNoticeToContact(
+  sessionToken: string,
+  c: EmergencyContact,
+): Promise<void> {
+  const sock = ensureSocket(sessionToken);
   const first = c.name.trim().split(/\s+/)[0] ?? '';
   const greeting = first ? `Oi, ${first}!` : 'Oi!';
   const message =
@@ -64,7 +59,13 @@ type Ctx = {
 
 const AliveContext = createContext<Ctx | null>(null);
 
-export function AliveProvider({ children }: { children: React.ReactNode }) {
+export function AliveProvider({
+  sessionToken,
+  children,
+}: {
+  sessionToken: string;
+  children: React.ReactNode;
+}) {
   const [ready, setReady] = useState(false);
   const [config, setConfig] = useState<AppConfig>({
     intervalDays: 3,
@@ -109,7 +110,7 @@ export function AliveProvider({ children }: { children: React.ReactNode }) {
   }, [refresh]);
 
   useEffect(() => {
-    if (!ready) return;
+    if (!ready || !sessionToken) return;
     const dl = deadlineOf(config);
     if (!dl || !isExpired(config) || contacts.length === 0) return;
 
@@ -120,7 +121,7 @@ export function AliveProvider({ children }: { children: React.ReactNode }) {
       if (sent === dl.getTime()) return;
 
       try {
-        const sock = getSocket();
+        const sock = ensureSocket(sessionToken);
         await new Promise<void>((resolve, reject) => {
           const t = setTimeout(() => reject(new Error('timeout')), 60000);
           sock.emit(
@@ -152,7 +153,7 @@ export function AliveProvider({ children }: { children: React.ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [ready, config, contacts]);
+  }, [ready, sessionToken, config, contacts]);
 
   const checkIn = useCallback(async () => {
     const now = new Date();
@@ -188,7 +189,7 @@ export function AliveProvider({ children }: { children: React.ReactNode }) {
       const next = [...contacts, c];
       await storage.saveContacts(next);
       setContacts(next);
-      void sendWelcomeNoticeToContact(c).catch((e) => {
+      void sendWelcomeNoticeToContact(sessionToken, c).catch((e) => {
         const msg = e instanceof Error ? e.message : String(e);
         Alert.alert(
           'Contato salvo',
@@ -197,7 +198,7 @@ export function AliveProvider({ children }: { children: React.ReactNode }) {
         );
       });
     },
-    [contacts],
+    [contacts, sessionToken],
   );
 
   const updateContact = useCallback(

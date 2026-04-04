@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   Alert,
   KeyboardAvoidingView,
@@ -19,10 +20,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAlive } from '../context/AliveContext';
 import { notificationsUnavailableInExpoGoAndroid } from '../lib/notifications';
 import { DEFAULT_REMINDER_IDS, REMINDER_OPTIONS, type ReminderOffsetId } from '../lib/reminderOffsets';
-import type { RootStackParamList } from '../navigation/types';
+import type { AppStackParamList } from '../navigation/types';
+import { useAuth } from '../context/AuthContext';
+import * as authStorage from '../lib/authStorage';
+import { isBiometricLoginAvailable } from '../lib/biometric';
 import { colors, gradients } from '../theme';
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
+type Nav = NativeStackNavigationProp<AppStackParamList>;
 
 const REMINDER_ICON: Record<ReminderOffsetId, keyof typeof Ionicons.glyphMap> = {
   '24h': 'calendar-outline',
@@ -36,14 +40,27 @@ const REMINDER_ICON: Record<ReminderOffsetId, keyof typeof Ionicons.glyphMap> = 
 
 export default function SettingsScreen() {
   const navigation = useNavigation<Nav>();
+  const { session, signOut } = useAuth();
   const insets = useSafeAreaInsets();
   const { config, setIntervalDays, setMessage, reminderIds, setReminderIds } = useAlive();
   const [days, setDays] = useState(String(config.intervalDays));
   const [msg, setMsg] = useState(config.emergencyMessage);
   const [savedInterval, setSavedInterval] = useState(false);
   const [savedMessage, setSavedMessage] = useState(false);
+  const [bioAvailable, setBioAvailable] = useState(false);
+  const [bioProtectSession, setBioProtectSession] = useState(false);
   const intervalTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      void (async () => {
+        const ok = await isBiometricLoginAvailable();
+        setBioAvailable(ok);
+        setBioProtectSession(await authStorage.getUseBiometricForToken());
+      })();
+    }, []),
+  );
 
   const flashSaved = useCallback(
     (which: 'interval' | 'message') => {
@@ -335,6 +352,80 @@ export default function SettingsScreen() {
             </Pressable>
           </View>
 
+          {bioAvailable ? (
+            <>
+              <Text style={styles.kicker}>Segurança</Text>
+              <View style={styles.card}>
+                <View style={styles.cardHeaderRow}>
+                  <Ionicons name="finger-print-outline" size={22} color={colors.darkTeal} />
+                  <Text style={styles.cardTitle}>Biometria</Text>
+                </View>
+                <Text style={styles.cardLead}>
+                  Ao abrir o app, pedimos Face ID, Touch ID ou impressão digital para aceder ao
+                  token da sessão (continua a precisar de e-mail e senha noutro aparelho).
+                </Text>
+                <View style={[styles.reminderRow, styles.reminderRowLast]}>
+                  <View style={styles.reminderTextCol}>
+                    <Text style={styles.reminderLabel}>Proteger sessão neste celular</Text>
+                    <Text style={styles.reminderSub}>
+                      Recomendado se só você usa este aparelho
+                    </Text>
+                  </View>
+                  <Switch
+                    value={bioProtectSession}
+                    onValueChange={(on) => {
+                      void (async () => {
+                        try {
+                          await authStorage.setUseBiometricForToken(on);
+                          setBioProtectSession(on);
+                          if (session?.accessToken) {
+                            await authStorage.setAccessToken(session.accessToken);
+                          }
+                        } catch (e) {
+                          Alert.alert(
+                            'Biometria',
+                            e instanceof Error
+                              ? e.message
+                              : 'Não foi possível atualizar a proteção.',
+                          );
+                          setBioProtectSession(await authStorage.getUseBiometricForToken());
+                        }
+                      })();
+                    }}
+                    trackColor={{ false: '#d1d5db', true: 'rgba(78,205,196,0.5)' }}
+                    thumbColor={bioProtectSession ? colors.darkTeal : '#f4f4f5'}
+                  />
+                </View>
+              </View>
+            </>
+          ) : null}
+
+          <Text style={styles.kicker}>Conta</Text>
+          <View style={styles.card}>
+            <Text style={styles.accountEmail}>
+              {session?.user.email ?? 'Conta ligada ao Estou Vivo'}
+            </Text>
+            <Pressable
+              style={styles.signOutBtn}
+              onPress={() => {
+                Alert.alert(
+                  'Sair',
+                  'Vai terminar a sessão neste dispositivo. Os lembretes locais continuam; para alterar o WhatsApp no servidor, volte a entrar.',
+                  [
+                    { text: 'Cancelar', style: 'cancel' },
+                    {
+                      text: 'Sair',
+                      style: 'destructive',
+                      onPress: () => void signOut(),
+                    },
+                  ],
+                );
+              }}
+            >
+              <Text style={styles.signOutTxt}>Terminar sessão</Text>
+            </Pressable>
+          </View>
+
           <View style={{ height: 32 }} />
         </ScrollView>
       </LinearGradient>
@@ -541,4 +632,19 @@ const styles = StyleSheet.create({
   linkTextCol: { flex: 1 },
   linkTitle: { fontSize: 16, fontWeight: '700', color: colors.fabulousDeep },
   linkSub: { fontSize: 13, color: '#9ca3af', marginTop: 2 },
+  accountEmail: {
+    fontSize: 15,
+    color: colors.warmGray,
+    marginBottom: 16,
+    lineHeight: 22,
+  },
+  signOutBtn: {
+    paddingVertical: 14,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(230, 57, 70, 0.35)',
+    alignItems: 'center',
+    backgroundColor: 'rgba(230, 57, 70, 0.06)',
+  },
+  signOutTxt: { fontSize: 16, fontWeight: '700', color: colors.dangerRed },
 });

@@ -1,0 +1,97 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Fundo: mais profundidade e um toque de azul-esverdeado -->
+    <radialGradient id="bg" cx="42%" cy="38%" r="78%">
+      <stop offset="0%" stop-color="#3dd4c8"/>
+      <stop offset="38%" stop-color="#1f9d94"/>
+      <stop offset="72%" stop-color="#0d5c59"/>
+      <stop offset="100%" stop-color="#052a2c"/>
+    </radialGradient>
+
+    <!-- Brilho suave no topo (luz) -->
+    <radialGradient id="specular" cx="50%" cy="22%" r="55%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.28"/>
+      <stop offset="45%" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="warmGlow" cx="50%" cy="46%" r="40%">
+      <stop offset="0%" stop-color="#ffc078" stop-opacity="0.38"/>
+      <stop offset="55%" stop-color="#fbad5c" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#fbad5c" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+      <stop offset="50%" stop-color="#021a1b" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#021a1b" stop-opacity="0.35"/>
+    </radialGradient>
+
+    <!-- Anel exterior: volume -->
+    <linearGradient id="ringStroke" x1="22%" y1="18%" x2="82%" y2="88%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="45%" stop-color="#e8f4f3"/>
+      <stop offset="100%" stop-color="#94c9c4"/>
+    </linearGradient>
+
+    <!-- Traços principais: leve gradiente -->
+    <linearGradient id="lineStroke" x1="18%" y1="22%" x2="88%" y2="92%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#dcefed"/>
+    </linearGradient>
+
+    <filter id="ringGlow" x="-28%" y="-28%" width="156%" height="156%">
+      <feGaussianBlur stdDeviation="4" result="b"/>
+      <feMerge>
+        <feMergeNode in="b"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- Halo suave + traço nítido em cima -->
+    <filter id="iconDepth" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" fill="url(#bg)"/>
+
+  <ellipse cx="256" cy="118" rx="200" ry="120" fill="url(#specular)"/>
+
+  <circle cx="256" cy="256" r="172" fill="url(#warmGlow)"/>
+
+  <rect width="512" height="512" fill="url(#vignette)"/>
+
+  <!-- Conteúdo ~zona segura adaptativa; escala 0.86 -->
+  <g transform="translate(256 256) scale(0.86) translate(-256 -256)">
+    <circle cx="256" cy="256" r="214"
+            stroke="url(#ringStroke)"
+            stroke-width="20"
+            fill="none"
+            filter="url(#ringGlow)"/>
+
+    <!-- Anel interno fino -->
+    <circle cx="256" cy="256" r="198"
+            stroke="#ffffff"
+            stroke-opacity="0.14"
+            stroke-width="3"
+            fill="none"/>
+
+    <g filter="url(#iconDepth)" stroke="url(#lineStroke)" stroke-width="20" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 155 245 C 130 175 180 125 230 145 C 245 151 256 168 256 168 C 256 168 267 151 282 145 C 332 125 382 175 357 245"/>
+      <path d="M 180 295 L 238 353 C 248 363 264 363 274 353 L 332 295"/>
+      <path d="M 115 270 L 195 270 L 222 210 L 256 305 L 290 210 L 317 270 L 397 270"/>
+    </g>
+
+    <!-- Contorno nítido por cima -->
+    <g stroke="#ffffff" stroke-width="17" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.97">
+      <path d="M 155 245 C 130 175 180 125 230 145 C 245 151 256 168 256 168 C 256 168 267 151 282 145 C 332 125 382 175 357 245"/>
+      <path d="M 180 295 L 238 353 C 248 363 264 363 274 353 L 332 295"/>
+      <path d="M 115 270 L 195 270 L 222 210 L 256 305 L 290 210 L 317 270 L 397 270"/>
+    </g>
+  </g>
+
+</svg>

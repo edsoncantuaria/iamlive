@@ -19,12 +19,12 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrazilPhoneField } from '../components/BrazilPhoneField';
 import { BR_PHONE_HELPER, normalizeToBrazilE164 } from '../lib/phoneBr';
-import type { RootStackParamList } from '../navigation/types';
-import { disconnectSocket, getSocket } from '../socket';
-import { CLIENT_TOKEN } from '../config';
+import type { AppStackParamList } from '../navigation/types';
+import { disconnectSocket, ensureSocket } from '../socket';
+import { useAuth } from '../context/AuthContext';
 import { colors, gradients } from '../theme';
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
+type Nav = NativeStackNavigationProp<AppStackParamList>;
 
 type StatusPayload =
   | { status: 'connecting' }
@@ -38,6 +38,7 @@ type StatusPayload =
 
 export default function WhatsAppScreen() {
   const navigation = useNavigation<Nav>();
+  const { session } = useAuth();
   const insets = useSafeAreaInsets();
   const [qr, setQr] = useState<string | null>(null);
   const [statusLine, setStatusLine] = useState('Preparando…');
@@ -91,16 +92,17 @@ export default function WhatsAppScreen() {
   }, []);
 
   useEffect(() => {
-    if (!CLIENT_TOKEN) {
-      setStatusLine('Configuração do app incompleta.');
+    const token = session?.accessToken;
+    if (!token) {
+      setStatusLine('Inicie sessão para configurar o WhatsApp.');
       setSockOk(false);
       return;
     }
 
-    let sock: ReturnType<typeof getSocket>;
+    let sock: ReturnType<typeof ensureSocket>;
 
     try {
-      sock = getSocket();
+      sock = ensureSocket(token);
     } catch (e) {
       setStatusLine('Não foi possível iniciar a conexão.');
       setLastErr(e instanceof Error ? e.message : String(e));
@@ -168,7 +170,7 @@ export default function WhatsAppScreen() {
       sock.off('whatsapp-pairing-code', onPairingCode);
       sock.off('whatsapp-pairing-error', onPairingError);
     };
-  }, [applyStatus, socketEpoch]);
+  }, [applyStatus, socketEpoch, session?.accessToken]);
 
   const requestPairing = useCallback(() => {
     setPairErr(null);
@@ -180,13 +182,19 @@ export default function WhatsAppScreen() {
     }
     setPairLoading(true);
     try {
-      const sock = getSocket();
+      const token = session?.accessToken;
+      if (!token) {
+        setPairLoading(false);
+        setPairErr('Sessão inválida. Entre novamente.');
+        return;
+      }
+      const sock = ensureSocket(token);
       sock.emit('whatsapp-request-pairing', { phone: normalized });
     } catch (e) {
       setPairLoading(false);
       setPairErr(e instanceof Error ? e.message : String(e));
     }
-  }, [phoneLocal]);
+  }, [phoneLocal, session?.accessToken]);
 
   const reconnect = () => {
     disconnectSocket();
@@ -223,7 +231,7 @@ export default function WhatsAppScreen() {
     };
   }, []);
 
-  const configMissing = !CLIENT_TOKEN;
+  const configMissing = !session?.accessToken;
   const serverOk = sockOk === true;
   const serverPending = sockOk === null;
 

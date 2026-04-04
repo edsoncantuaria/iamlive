@@ -8,6 +8,24 @@ import { loadReminderIds } from './storage';
 export const notificationsUnavailableInExpoGoAndroid =
   Constants.executionEnvironment === ExecutionEnvironment.StoreClient && Platform.OS === 'android';
 
+const REMINDER_CHANNEL = 'check-in-reminders';
+
+async function ensureAndroidReminderChannel(): Promise<void> {
+  if (notificationsUnavailableInExpoGoAndroid || Platform.OS !== 'android') return;
+  try {
+    await Notifications.setNotificationChannelAsync(REMINDER_CHANNEL, {
+      name: 'Lembretes de check-in',
+      importance: Notifications.AndroidImportance.HIGH,
+      vibrationPattern: [0, 250, 250, 250],
+      sound: 'default',
+      enableVibrate: true,
+      showBadge: true,
+    });
+  } catch (e) {
+    console.warn('Canal de notificações Android:', e);
+  }
+}
+
 let handlerInstalled = false;
 
 export function installNotificationHandlerIfSupported(): void {
@@ -87,6 +105,7 @@ export async function scheduleReminders(dl: Date): Promise<void> {
     return;
   }
   try {
+    await ensureAndroidReminderChannel();
     await Notifications.cancelAllScheduledNotificationsAsync();
     const now = Date.now();
     const enabled = new Set(await loadReminderIds());
@@ -99,7 +118,11 @@ export async function scheduleReminders(dl: Date): Promise<void> {
       const { title, body } = reminderCopy(opt.id);
       await Notifications.scheduleNotificationAsync({
         identifier: `reminder-${opt.id}`,
-        content: { title, body },
+        content: {
+          title,
+          body,
+          ...(Platform.OS === 'android' ? { channelId: REMINDER_CHANNEL } : {}),
+        },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: when },
       });
     }

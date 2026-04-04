@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useAlive, useAliveStatus } from '../context/AliveContext';
-import type { RootStackParamList } from '../navigation/types';
+import type { AppStackParamList } from '../navigation/types';
 import { colors, gradients } from '../theme';
 import type { AliveStatus } from '../lib/appState';
 import { progressPercent, timeRemaining } from '../lib/appState';
@@ -29,7 +29,7 @@ import { EstouVivoLogo } from '../components/brand/EstouVivoLogo';
 const { width } = Dimensions.get('window');
 const BTN = width * 0.52;
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
+type Nav = NativeStackNavigationProp<AppStackParamList>;
 
 function statusLabel(s: AliveStatus): { text: string; color: string } {
   switch (s) {

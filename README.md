@@ -15,21 +15,28 @@ Não há fallback `wa.me`: o envio é **só pelo servidor**; se o servidor ou a 
 ```bash
 cd server
 cp .env.example .env
-# Editar CLIENT_TOKEN e opcionalmente PORT / AUTH_DIR
+# Obrigatório: JWT_SECRET (ver .env.example)
+# Produção: NODE_ENV=production, TRUST_PROXY=1 atrás de Cloudflare/nginx, JWT_SECRET forte
+# Opcional: CLIENT_TOKEN só em dev; em prod use ALLOW_CLIENT_TOKEN_IN_PRODUCTION=1 se precisar do legado
+# Opcional: CORS_ORIGIN (lista ou *), PUBLIC_ORIGIN nas páginas /legal/*
+# `npm start` limita heap do Node (~384 MiB) para caber melhor em VM ~1 GiB; `npm run start:no-heap-cap` remove o limite
 npm install
 npm run dev
 ```
+
+Contas ficam em **MariaDB** (ou MySQL compatível): `DATABASE_URL` (`mysql://…`) ou `MYSQL_HOST` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_DATABASE`. A tabela `users` é criada na primeira subida. Cada usuário autenticado tem pasta própria em `data/auth/<userId>/` (ou `AUTH_DIR`) para a sessão **Baileys**. HTML de **privacidade** e **termos** em `GET /legal/privacy` e `GET /legal/terms` (revisar texto juridicamente antes das lojas).
 
 ## App móvel
 
 ```bash
 cd apps/mobile
 cp .env.example .env
-# EXPO_PUBLIC_SERVER_URL — ex.: http://IP_DA_MAQUINA:3000 (emulador Android: http://10.0.2.2:3000)
-# EXPO_PUBLIC_CLIENT_TOKEN — igual ao CLIENT_TOKEN do servidor
+# EXPO_PUBLIC_SERVER_URL — ex.: https://api.seudominio.com (emulador Android: http://10.0.2.2:PORTA)
 npm install
 npx expo start
 ```
+
+O fluxo inicial é **início de sessão** com e-mail e senha (biometria no aparelho opcional para proteger o token). O **JWT** vai para `expo-secure-store` e é enviado no handshake do Socket.IO.
 
 ## Requisitos
 

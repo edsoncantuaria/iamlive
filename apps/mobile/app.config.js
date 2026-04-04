@@ -13,6 +13,11 @@ module.exports = {
       entitlements: {
         'com.apple.security.application-groups': ['group.com.estouvivo.mobile'],
       },
+      infoPlist: {
+        ...((appJson.expo.ios && appJson.expo.ios.infoPlist) || {}),
+        NSFaceIDUsageDescription:
+          'O Estou Vivo usa Face ID para desbloquear a sua sessão de forma segura.',
+      },
     },
     android: {
       ...(appJson.expo.android || {}),
@@ -20,6 +25,7 @@ module.exports = {
     },
     plugins: [
       ...((appJson.expo && appJson.expo.plugins) || []),
+      'expo-secure-store',
       [
         'react-native-android-widget',
         {
@@ -41,7 +47,6 @@ module.exports = {
     ],
     extra: {
       serverUrl: process.env.EXPO_PUBLIC_SERVER_URL ?? 'http://localhost:3000',
-      clientToken: process.env.EXPO_PUBLIC_CLIENT_TOKEN ?? '',
     },
   },
 };

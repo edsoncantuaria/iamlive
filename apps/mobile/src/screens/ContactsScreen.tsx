@@ -18,10 +18,10 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BrazilPhoneField } from '../components/BrazilPhoneField';
 import { useAlive } from '../context/AliveContext';
 import { formatBrazilDisplay, normalizeToBrazilE164 } from '../lib/phoneBr';
-import type { RootStackParamList } from '../navigation/types';
+import type { AppStackParamList } from '../navigation/types';
 import { colors, gradients } from '../theme';
 
-type Nav = NativeStackNavigationProp<RootStackParamList>;
+type Nav = NativeStackNavigationProp<AppStackParamList>;
 
 export default function ContactsScreen() {
   const navigation = useNavigation<Nav>();
