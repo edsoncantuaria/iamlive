@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, type TextStyle, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
@@ -22,6 +22,8 @@ type Props = {
   title: string;
   /** Subtítulo curto (sem emoji). */
   subtitle?: string;
+  /** Sobrescreve estilo do subtítulo (ex.: contraste no modo resting sobre gradiente). */
+  subtitleStyle?: TextStyle;
   /** Marca central geométrica (cicla 0–4). */
   centerVariant: number;
   onPress: () => void;
@@ -39,6 +41,7 @@ export function HeroCheckInButton({
   gradient,
   title,
   subtitle,
+  subtitleStyle,
   centerVariant,
   onPress,
   paperActive,
@@ -101,6 +104,8 @@ export function HeroCheckInButton({
           <Pressable
             onPress={validated ? undefined : onPress}
             disabled={validated}
+            accessibilityLabel={`${title}${subtitle ? `. ${subtitle}` : ''}`}
+            accessibilityRole="button"
             accessibilityState={{ disabled: validated }}
             accessibilityHint={
               validated
@@ -135,7 +140,15 @@ export function HeroCheckInButton({
                 )}
                 <Text style={[styles.btnTxt, { fontSize: Math.max(13, size * 0.09) }]}>{title}</Text>
                 {subtitle ? (
-                  <Text style={[styles.btnSub, { fontSize: Math.max(11, size * 0.065) }]}>{subtitle}</Text>
+                  <Text
+                    style={[
+                      styles.btnSub,
+                      { fontSize: Math.max(11, size * 0.065) },
+                      subtitleStyle,
+                    ]}
+                  >
+                    {subtitle}
+                  </Text>
                 ) : null}
               </LinearGradient>
             </Animated.View>

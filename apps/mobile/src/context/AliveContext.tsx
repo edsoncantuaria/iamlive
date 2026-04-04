@@ -13,6 +13,7 @@ import { aliveStatus, deadlineOf, isExpired } from '../lib/appState';
 import { requestNotificationPermissionsSafe, scheduleReminders } from '../lib/notifications';
 import { syncHomeWidgetsFromConfig } from '../lib/syncHomeWidgets';
 import * as storage from '../lib/storage';
+import { emergencySendUserMessage, welcomeSendUserMessage } from '../lib/userFacingErrors';
 import { ensureSocket } from '../socket';
 
 /** Aviso enviado ao cadastrar — a pessoa fica ciente do papel de contato de confiança. */
@@ -51,7 +52,7 @@ type Ctx = {
   setIntervalDays: (n: number) => Promise<void>;
   setMessage: (s: string) => Promise<void>;
   setReminderIds: (ids: ReminderOffsetId[]) => Promise<void>;
-  addContact: (c: EmergencyContact) => Promise<void>;
+  addContact: (c: EmergencyContact, sendWelcomeWhatsApp: boolean) => Promise<void>;
   updateContact: (i: number, c: EmergencyContact) => Promise<void>;
   removeContact: (i: number) => Promise<void>;
   refresh: () => Promise<void>;
@@ -141,12 +142,7 @@ export function AliveProvider({
         await storage.setEmergencySentDeadline(dl.getTime());
       } catch (e) {
         if (cancelled) return;
-        const msg = e instanceof Error ? e.message : String(e);
-        Alert.alert(
-          'Não foi possível avisar os contatos',
-          'Não foi possível enviar pelo WhatsApp agora. Verifique a internet e a tela Estou Vivo no WhatsApp.\n\n' +
-            msg,
-        );
+        Alert.alert('Não foi possível avisar os contatos', emergencySendUserMessage(e));
       }
     })();
 
@@ -184,18 +180,14 @@ export function AliveProvider({
   }, []);
 
   const addContact = useCallback(
-    async (c: EmergencyContact) => {
+    async (c: EmergencyContact, sendWelcomeWhatsApp: boolean) => {
       if (contacts.length >= 2) return;
       const next = [...contacts, c];
       await storage.saveContacts(next);
       setContacts(next);
+      if (!sendWelcomeWhatsApp) return;
       void sendWelcomeNoticeToContact(sessionToken, c).catch((e) => {
-        const msg = e instanceof Error ? e.message : String(e);
-        Alert.alert(
-          'Contato salvo',
-            'Não foi possível enviar o aviso pelo WhatsApp agora. A pessoa continua cadastrada e será avisada se o prazo de emergência expirar. Confira a tela Estou Vivo no WhatsApp.\n\n' +
-            msg,
-        );
+        Alert.alert('Contato salvo', welcomeSendUserMessage(e));
       });
     },
     [contacts, sessionToken],

@@ -1,6 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Animated,
   Dimensions,
   Pressable,
   StyleSheet,
@@ -34,7 +35,10 @@ type Nav = NativeStackNavigationProp<AppStackParamList>;
 function statusLabel(s: AliveStatus): { text: string; color: string } {
   switch (s) {
     case 'neverChecked':
-      return { text: 'Quando estiver bem, confirme aqui', color: colors.warmGray };
+      return {
+        text: 'Faça o primeiro check-in quando estiver bem',
+        color: colors.warmGray,
+      };
     case 'safe':
       return { text: 'Tudo tranquilo por enquanto', color: colors.safeGreen };
     case 'warning':
@@ -78,15 +82,28 @@ export default function HomeScreen() {
   const [overlayQuote, setOverlayQuote] = useState<MotivationalQuote | null>(null);
   /** Evita novo check-in enquanto o overlay (animação + frase) está aberto. */
   const [overlayBusy, setOverlayBusy] = useState(false);
+  const toastOpacity = useRef(new Animated.Value(0)).current;
+  const [toastOn, setToastOn] = useState(false);
+
+  const showCheckInToast = useCallback(() => {
+    setToastOn(true);
+    toastOpacity.setValue(0);
+    Animated.sequence([
+      Animated.timing(toastOpacity, { toValue: 1, duration: 200, useNativeDriver: true }),
+      Animated.delay(3200),
+      Animated.timing(toastOpacity, { toValue: 0, duration: 240, useNativeDriver: true }),
+    ]).start(() => setToastOn(false));
+  }, [toastOpacity]);
 
   const onFillComplete = useCallback(async () => {
     try {
       await checkIn();
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      showCheckInToast();
     } finally {
       setOverlayBusy(false);
     }
-  }, [checkIn]);
+  }, [checkIn, showCheckInToast]);
 
   const handleHeroPress = useCallback(async () => {
     if (overlayBusy) return;
@@ -119,14 +136,20 @@ export default function HomeScreen() {
 
   /** Em `safe` o botão mostra ✓ e calma (`resting`), mas continua tocável para renovar o prazo. */
   const heroTitle =
-    st === 'safe' ? 'Check-in feito' : st === 'expired' ? 'Estou aqui' : 'Estou vivo';
+    st === 'neverChecked'
+      ? 'Primeiro check-in'
+      : st === 'safe'
+        ? 'Check-in feito'
+        : st === 'expired'
+          ? 'Estou aqui'
+          : 'Estou vivo';
   const heroSub =
     st === 'safe'
-      ? 'Descansa — toque de novo só se quiser reiniciar o limite'
+      ? 'Toque de novo só se quiser antecipar o próximo prazo'
       : st === 'expired'
         ? 'Confirme para pausar o alerta'
         : st === 'neverChecked'
-          ? 'Um toque, um respiro'
+          ? 'Um toque confirma que está bem e inicia o prazo'
           : 'Confirme que está bem';
 
   if (!ready) {
@@ -155,7 +178,9 @@ export default function HomeScreen() {
           <Pressable
             onPress={() => navigation.navigate('Contacts')}
             style={styles.iconBtn}
+            hitSlop={12}
             accessibilityLabel="Contatos de confiança"
+            accessibilityHint="Abre a lista de pessoas que recebem avisos"
           >
             <Ionicons name="people-outline" size={22} color={colors.warmGray} />
             <Text style={styles.badge}>{contacts.length}</Text>
@@ -163,14 +188,18 @@ export default function HomeScreen() {
           <Pressable
             onPress={() => navigation.navigate('Settings')}
             style={styles.iconBtn}
+            hitSlop={12}
             accessibilityLabel="Configurações"
+            accessibilityHint="Intervalo, lembretes e mensagem de emergência"
           >
             <Ionicons name="settings-outline" size={22} color={colors.warmGray} />
           </Pressable>
           <Pressable
             onPress={() => navigation.navigate('WhatsApp')}
             style={styles.iconBtn}
+            hitSlop={12}
             accessibilityLabel="WhatsApp para alertas"
+            accessibilityHint="Ligar a conta do WhatsApp que envia mensagens aos contatos"
           >
             <Ionicons name="chatbubbles-outline" size={22} color={colors.warmGray} />
           </Pressable>
@@ -193,6 +222,7 @@ export default function HomeScreen() {
           centerVariant={0}
           title={heroTitle}
           subtitle={heroSub}
+          subtitleStyle={st === 'safe' ? styles.heroSubResting : undefined}
           paperActive={st !== 'safe'}
           mode={st === 'safe' ? 'resting' : 'action'}
           onPress={handleHeroPress}
@@ -220,6 +250,15 @@ export default function HomeScreen() {
           </Text>
         </View>
       )}
+
+      {toastOn ? (
+        <Animated.View style={[styles.toastWrap, { opacity: toastOpacity }]} pointerEvents="none">
+          <View style={styles.toastInner}>
+            <Ionicons name="checkmark-circle" size={20} color={colors.safeGreen} />
+            <Text style={styles.toastTxt}>Prazo reiniciado</Text>
+          </View>
+        </Animated.View>
+      ) : null}
     </LinearGradient>
   );
 }
@@ -246,11 +285,21 @@ const styles = StyleSheet.create({
   },
   headerRight: { flexDirection: 'row', gap: 2, alignItems: 'center' },
   iconBtn: {
-    padding: 10,
+    minWidth: 44,
+    minHeight: 44,
+    paddingHorizontal: 10,
+    justifyContent: 'center',
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
+  },
+  heroSubResting: {
+    color: 'rgba(255,255,255,0.98)',
+    fontWeight: '600',
+    textShadowColor: 'rgba(12, 70, 62, 0.45)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 5,
   },
   badge: {
     fontSize: 13,
@@ -292,4 +341,29 @@ const styles = StyleSheet.create({
     zIndex: 2,
   },
   hintTxt: { color: colors.warningAmber, fontSize: 14, lineHeight: 20 },
+  toastWrap: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    bottom: 28,
+    alignItems: 'center',
+    zIndex: 20,
+  },
+  toastInner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 14,
+    backgroundColor: 'rgba(255,255,255,0.96)',
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: 'rgba(44, 122, 123, 0.2)',
+    shadowColor: '#000',
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  toastTxt: { fontSize: 15, fontWeight: '700', color: colors.fabulousDeep },
 });

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -22,6 +22,7 @@ import { BR_PHONE_HELPER, normalizeToBrazilE164 } from '../lib/phoneBr';
 import type { AppStackParamList } from '../navigation/types';
 import { disconnectSocket, ensureSocket } from '../socket';
 import { useAuth } from '../context/AuthContext';
+import { socketErrorPresentation } from '../lib/userFacingErrors';
 import { colors, gradients } from '../theme';
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
@@ -235,6 +236,11 @@ export default function WhatsAppScreen() {
   const serverOk = sockOk === true;
   const serverPending = sockOk === null;
 
+  const socketErrBox = useMemo(
+    () => (lastErr ? socketErrorPresentation(lastErr) : null),
+    [lastErr],
+  );
+
   return (
     <KeyboardAvoidingView
       style={styles.flex}
@@ -316,16 +322,13 @@ export default function WhatsAppScreen() {
             </View>
           </View>
 
-          {lastErr && !configMissing ? (
+          {socketErrBox && !configMissing ? (
             <View style={styles.errBox}>
-              <Text style={styles.errTitle}>Algo deu errado</Text>
+              <Text style={styles.errTitle}>{socketErrBox.title}</Text>
               <Text style={styles.errTxt} selectable>
-                {lastErr}
+                {socketErrBox.detail}
               </Text>
-              <Text style={styles.errHint}>
-                Se o problema continuar, confira a internet, se o Estou Vivo está ligado e
-                acessível, e toque em “Atualizar conexão” abaixo.
-              </Text>
+              <Text style={styles.errHint}>{socketErrBox.hint}</Text>
             </View>
           ) : null}
 
@@ -373,7 +376,15 @@ export default function WhatsAppScreen() {
                   <Text style={styles.btnTxt}>Gerar código de pareamento</Text>
                 )}
               </Pressable>
-              {pairErr ? <Text style={styles.pairErr}>{pairErr}</Text> : null}
+              {pairErr ? (
+                <View>
+                  <Text style={styles.pairErr}>{pairErr}</Text>
+                  <Text style={styles.pairErrHint}>
+                    Verifique a internet. Em WhatsApp para alertas, confirme que a ligação ao servidor
+                    está verde e toque em “Atualizar conexão” se precisar.
+                  </Text>
+                </View>
+              ) : null}
               {pairCode ? (
                 <View style={styles.codeBox}>
                   <Text style={styles.codeLabel}>Seu código</Text>
@@ -581,6 +592,7 @@ const styles = StyleSheet.create({
   btnDisabled: { opacity: 0.55 },
   btnTxt: { color: '#fff', fontWeight: '700', fontSize: 16 },
   pairErr: { marginTop: 10, fontSize: 13, color: colors.dangerRed },
+  pairErrHint: { marginTop: 8, fontSize: 12, color: '#7a7388', lineHeight: 18 },
   codeBox: {
     marginTop: 16,
     padding: 14,

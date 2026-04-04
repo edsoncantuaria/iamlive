@@ -3,6 +3,8 @@ import type { AppConfig, EmergencyContact } from './appState';
 import { DEFAULT_INTERVAL_DAYS, DEFAULT_MESSAGE } from './appState';
 import { DEFAULT_REMINDER_IDS, normalizeReminderIds, type ReminderOffsetId } from './reminderOffsets';
 
+const KEY_ONBOARDING_DONE = 'onboarding_v1_done';
+
 const KEY_CONTACTS = 'emergency_contacts';
 const KEY_LAST = 'last_check_in';
 const KEY_INTERVAL = 'interval_days';
@@ -78,4 +80,13 @@ export async function setEmergencySentDeadline(deadlineMs: number): Promise<void
 
 export async function clearEmergencySent(): Promise<void> {
   await AsyncStorage.removeItem(KEY_EMERGENCY);
+}
+
+export async function loadOnboardingCompleted(): Promise<boolean> {
+  const v = await AsyncStorage.getItem(KEY_ONBOARDING_DONE);
+  return v === '1';
+}
+
+export async function saveOnboardingCompleted(): Promise<void> {
+  await AsyncStorage.setItem(KEY_ONBOARDING_DONE, '1');
 }

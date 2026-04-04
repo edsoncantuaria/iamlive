@@ -1,5 +1,5 @@
-import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import * as SplashScreen from 'expo-splash-screen';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -10,10 +10,15 @@ import HomeScreen from '../screens/HomeScreen';
 import ContactsScreen from '../screens/ContactsScreen';
 import SettingsScreen from '../screens/SettingsScreen';
 import WhatsAppScreen from '../screens/WhatsAppScreen';
+import OnboardingScreen from '../screens/OnboardingScreen';
+import * as storage from '../lib/storage';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import LegalWebScreen from '../screens/auth/LegalWebScreen';
-import { colors } from '../theme';
+import { CloudiveIntroSplash, CloudiveLoadingScreen } from '../components/cloudive';
+
+/** Duração mínima da splash Cloudive em JS após esconder a splash nativa (alinha com experiência de abertura). */
+const CLOUDIVE_INTRO_MS = 1500;
 
 const AuthStack = createNativeStackNavigator<AuthStackParamList>();
 const AppStack = createNativeStackNavigator<AppStackParamList>();
@@ -34,13 +39,36 @@ function AuthNavigator() {
 }
 
 function AppNavigator() {
+  const [boot, setBoot] = useState<'loading' | 'ready'>('loading');
+  const [initialRoute, setInitialRoute] = useState<'Home' | 'Onboarding'>('Home');
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const done = await storage.loadOnboardingCompleted();
+      if (!cancelled) {
+        setInitialRoute(done ? 'Home' : 'Onboarding');
+        setBoot('ready');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (boot === 'loading') {
+    return <CloudiveLoadingScreen message="Carregando…" />;
+  }
+
   return (
     <AppStack.Navigator
+      initialRouteName={initialRoute}
       screenOptions={{
         headerShown: false,
         animation: 'slide_from_right',
       }}
     >
+      <AppStack.Screen name="Onboarding" component={OnboardingScreen} />
       <AppStack.Screen name="Home" component={HomeScreen} />
       <AppStack.Screen name="Contacts" component={ContactsScreen} />
       <AppStack.Screen name="Settings" component={SettingsScreen} />
@@ -49,16 +77,32 @@ function AppNavigator() {
   );
 }
 
+function CloudiveIntroGate({ children }: { children: React.ReactNode }) {
+  const [done, setDone] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      await SplashScreen.hideAsync().catch(() => {});
+      await new Promise<void>((r) => setTimeout(r, CLOUDIVE_INTRO_MS));
+      if (!cancelled) setDone(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (!done) {
+    return <CloudiveIntroSplash />;
+  }
+  return <>{children}</>;
+}
+
 function Gate() {
   const { session, bootstrapping } = useAuth();
 
   if (bootstrapping) {
-    return (
-      <View style={styles.boot}>
-        <ActivityIndicator size="large" color={colors.darkTeal} />
-        <Text style={styles.bootTxt}>A carregar…</Text>
-      </View>
-    );
+    return <CloudiveLoadingScreen message="Carregando…" />;
   }
 
   if (!session) {
@@ -77,20 +121,11 @@ export default function RootNavigator() {
     <SafeAreaProvider>
       <AuthProvider>
         <NavigationContainer>
-          <Gate />
+          <CloudiveIntroGate>
+            <Gate />
+          </CloudiveIntroGate>
         </NavigationContainer>
       </AuthProvider>
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  boot: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    gap: 16,
-  },
-  bootTxt: { fontSize: 16, color: colors.warmGray },
-});

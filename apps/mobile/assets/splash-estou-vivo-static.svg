@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Splash nativo: marca Cloudive (empresa), fundo e cores Estou Vivo. Export -> splash-icon.png -->
+<!-- Splash nativo Cloudive / Estou Vivo. Regenerar PNG: npm run splash:cloudive (em apps/mobile) -->
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <rect width="1024" height="1024" fill="#052a2c"/>
   <g transform="translate(232, 424) scale(2)">

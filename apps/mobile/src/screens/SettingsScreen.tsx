@@ -3,6 +3,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import {
   Alert,
   KeyboardAvoidingView,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -28,6 +29,30 @@ import { useAuth } from '../context/AuthContext';
 import * as authStorage from '../lib/authStorage';
 import { isBiometricLoginAvailable } from '../lib/biometric';
 import { colors, gradients } from '../theme';
+import { SERVER_URL } from '../config';
+
+function legalUrl(path: 'privacy' | 'terms'): string {
+  const base = SERVER_URL.replace(/\/$/, '');
+  return `${base}/legal/${path}`;
+}
+
+async function openLegal(path: 'privacy' | 'terms'): Promise<void> {
+  const url = legalUrl(path);
+  try {
+    const ok = await Linking.canOpenURL(url);
+    if (ok) {
+      await Linking.openURL(url);
+      return;
+    }
+  } catch {
+    /* fallthrough */
+  }
+  Alert.alert(
+    'Não foi possível abrir',
+    `Abra no navegador: ${url}`,
+    [{ text: 'OK' }],
+  );
+}
 
 type Nav = NativeStackNavigationProp<AppStackParamList>;
 
@@ -443,13 +468,13 @@ export default function SettingsScreen() {
             </>
           ) : null}
 
-          <Text style={styles.kicker}>Conta</Text>
+          <Text style={styles.kicker}>Conta e privacidade</Text>
           <View style={styles.card}>
             <Text style={styles.accountEmail}>
               {session?.user.email ?? 'Conta ligada ao Estou Vivo'}
             </Text>
             <Pressable
-              style={styles.signOutBtn}
+              style={[styles.signOutBtn, styles.signOutBtnSpaced]}
               onPress={() => {
                 Alert.alert(
                   'Sair',
@@ -467,6 +492,56 @@ export default function SettingsScreen() {
             >
               <Text style={styles.signOutTxt}>Terminar sessão</Text>
             </Pressable>
+            <View style={styles.linkSep} />
+            <Pressable
+              style={styles.linkRow}
+              onPress={() => void openLegal('privacy')}
+              accessibilityRole="link"
+              accessibilityLabel="Abrir política de privacidade no navegador"
+            >
+              <View style={styles.linkIcon}>
+                <Ionicons name="document-text-outline" size={22} color={colors.darkTeal} />
+              </View>
+              <View style={styles.linkTextCol}>
+                <Text style={styles.linkTitle}>Política de privacidade</Text>
+                <Text style={styles.linkSub}>Abre no navegador (LGPD)</Text>
+              </View>
+              <Ionicons name="open-outline" size={20} color="#9ca3af" />
+            </Pressable>
+            <View style={styles.linkSep} />
+            <Pressable
+              style={styles.linkRow}
+              onPress={() => void openLegal('terms')}
+              accessibilityRole="link"
+              accessibilityLabel="Abrir termos de uso no navegador"
+            >
+              <View style={styles.linkIcon}>
+                <Ionicons name="reader-outline" size={22} color={colors.darkTeal} />
+              </View>
+              <View style={styles.linkTextCol}>
+                <Text style={styles.linkTitle}>Termos de uso</Text>
+                <Text style={styles.linkSub}>Abre no navegador</Text>
+              </View>
+              <Ionicons name="open-outline" size={20} color="#9ca3af" />
+            </Pressable>
+          </View>
+
+          <Text style={styles.kicker}>Widget na tela inicial</Text>
+          <View style={styles.card}>
+            <View style={styles.cardHeaderRow}>
+              <Ionicons name="grid-outline" size={22} color={colors.darkTeal} />
+              <Text style={styles.cardTitle}>Ver o estado de relance</Text>
+            </View>
+            <Text style={styles.cardLead}>
+              {Platform.select({
+                ios:
+                  'No iPhone: toque num espaço vazio na Tela de início até os ícones tremerem → + → procure “Estou Vivo” → Adicione o widget.',
+                android:
+                  'No Android: toque num espaço vazio na tela inicial → Widgets → Estou Vivo → arraste para a área principal.',
+                default:
+                  'Adicione o widget do Estou Vivo à tela inicial para acompanhar o check-in sem abrir o app.',
+              })}
+            </Text>
           </View>
 
           <View style={{ height: 32 }} />
@@ -709,5 +784,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(230, 57, 70, 0.06)',
   },
+  signOutBtnSpaced: { marginBottom: 6 },
   signOutTxt: { fontSize: 16, fontWeight: '700', color: colors.dangerRed },
 });

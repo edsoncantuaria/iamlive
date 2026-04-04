@@ -5,6 +5,7 @@ export type AuthStackParamList = {
 };
 
 export type AppStackParamList = {
+  Onboarding: undefined;
   Home: undefined;
   Contacts: undefined;
   Settings: undefined;

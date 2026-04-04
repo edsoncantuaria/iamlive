@@ -70,9 +70,9 @@ export default function ContactsScreen() {
             </View>
             <Text style={styles.heroTitle}>Quem pode te acompanhar</Text>
             <Text style={styles.heroBody}>
-              Escolha até duas pessoas de confiança. Ao cadastrar, enviamos um aviso por WhatsApp para
-              ela saber que você a incluiu e entender o que acontece se o prazo do seu check-in passar
-              sem confirmação.
+              Escolha até duas pessoas de confiança. Ao guardar, perguntamos se quer enviar já uma
+              mensagem no WhatsApp a explicar o papel dela — ou pode cadastrar só o número e avisar por
+              fora.
             </Text>
           </View>
 
@@ -80,10 +80,10 @@ export default function ContactsScreen() {
             <Ionicons name="logo-whatsapp" size={22} color={colors.darkTeal} style={styles.noticeIcon} />
             <Text style={styles.noticeTitle}>Como funciona</Text>
             <Text style={styles.noticeBody}>
-              O texto enviado nesse primeiro contato é só para informar que a pessoa foi escolhida. Se
-              o prazo expirar e você não confirmar que está bem, o app envia a{' '}
+              Se optar por enviar no WhatsApp ao cadastrar, a mensagem só explica que a pessoa foi
+              escolhida. Se o prazo expirar sem check-in, o app envia a{' '}
               <Text style={styles.noticeBold}>mensagem de emergência</Text> (editável em Configurações)
-              para os números cadastrados.
+              para os números guardados.
             </Text>
             <Pressable
               onPress={() => navigation.navigate('Settings')}
@@ -162,9 +162,23 @@ export default function ContactsScreen() {
                       Alert.alert('Já cadastrado', 'Esse número já está na lista.');
                       return;
                     }
-                    await addContact({ name: name.trim(), phone: e164 });
-                    setName('');
-                    setPhoneLocal('');
+                    const contact = { name: name.trim(), phone: e164 };
+                    const runAdd = (sendWa: boolean) => {
+                      void (async () => {
+                        await addContact(contact, sendWa);
+                        setName('');
+                        setPhoneLocal('');
+                      })();
+                    };
+                    Alert.alert(
+                      'Enviar confirmação no WhatsApp?',
+                      'Podemos mandar agora uma mensagem a explicar que esta pessoa é contato de confiança. O cadastro fica guardado mesmo que escolha não enviar.',
+                      [
+                        { text: 'Cancelar', style: 'cancel' },
+                        { text: 'Só cadastrar', onPress: () => runAdd(false) },
+                        { text: 'Enviar no WhatsApp', onPress: () => runAdd(true) },
+                      ],
+                    );
                   }}
                 >
                   <LinearGradient
