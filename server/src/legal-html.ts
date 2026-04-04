@@ -15,15 +15,17 @@ function esc(s: string): string {
 function legalIdentityBlock(): string {
   const name = process.env.LEGAL_OPERATOR_NAME?.trim();
   const cnpj = process.env.LEGAL_OPERATOR_CNPJ?.trim();
+  const cpf = process.env.LEGAL_OPERATOR_CPF?.trim();
   const email = process.env.LEGAL_CONTACT_EMAIL?.trim();
   const address = process.env.LEGAL_ADDRESS?.trim();
   const dpo = process.env.LEGAL_DPO_EMAIL?.trim();
 
   if (!name || !email) {
-    return `<div class="warn"><strong>Atenção (operador):</strong> Para exibição completa aos usuários, defina no servidor as variáveis <code>LEGAL_OPERATOR_NAME</code>, <code>LEGAL_CONTACT_EMAIL</code> e, quando aplicável, <code>LEGAL_OPERATOR_CNPJ</code>, <code>LEGAL_ADDRESS</code> e <code>LEGAL_DPO_EMAIL</code> (encarregado de dados — DPO).</div>`;
+    return `<div class="warn"><strong>Atenção (operador):</strong> Para exibição completa aos usuários, defina no servidor as variáveis <code>LEGAL_OPERATOR_NAME</code>, <code>LEGAL_CONTACT_EMAIL</code> e, quando aplicável, <code>LEGAL_OPERATOR_CPF</code> (pessoa física), <code>LEGAL_OPERATOR_CNPJ</code> (empresa), <code>LEGAL_ADDRESS</code> e <code>LEGAL_DPO_EMAIL</code> (encarregado de dados — DPO).</div>`;
   }
 
   let html = `<p><strong>Razão social / nome do controlador:</strong> ${esc(name)}</p>`;
+  if (cpf) html += `<p><strong>CPF:</strong> ${esc(cpf)}</p>`;
   if (cnpj) html += `<p><strong>CNPJ:</strong> ${esc(cnpj)}</p>`;
   html += `<p><strong>E-mail de contato:</strong> <a href="mailto:${esc(email)}">${esc(email)}</a></p>`;
   if (address) {

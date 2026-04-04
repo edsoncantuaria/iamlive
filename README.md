@@ -26,7 +26,7 @@ npm run dev
 
 Contas ficam em **MariaDB** (ou MySQL compatível): `DATABASE_URL` (`mysql://…`) ou `MYSQL_HOST` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_DATABASE`. A tabela `users` é criada na primeira subida. Cada usuário autenticado tem pasta própria em `data/auth/<userId>/` (ou `AUTH_DIR`) para a sessão **Baileys**.
 
-**Documentos legais (LGPD + termos em PT-BR):** `GET /legal/privacy` e `GET /legal/terms`. Configure no `.env` as variáveis `LEGAL_OPERATOR_NAME`, `LEGAL_CONTACT_EMAIL` e, quando aplicável, `LEGAL_OPERATOR_CNPJ`, `LEGAL_ADDRESS`, `LEGAL_DPO_EMAIL` para identificação completa do controlador. `PUBLIC_ORIGIN` deve ser a URL pública (ex.: `https://api-ial.cloudive.com.br`). Revisão por advogado recomendada antes do lançamento comercial.
+**Documentos legais (LGPD + termos em PT-BR):** `GET /legal/privacy` e `GET /legal/terms`. Configure no `.env` as variáveis `LEGAL_OPERATOR_NAME`, `LEGAL_CONTACT_EMAIL` e, quando aplicável, `LEGAL_OPERATOR_CPF` (pessoa física) ou `LEGAL_OPERATOR_CNPJ` (empresa), `LEGAL_ADDRESS`, `LEGAL_DPO_EMAIL` para identificação completa do controlador. `PUBLIC_ORIGIN` deve ser a URL pública (ex.: `https://api-ial.cloudive.com.br`). Revisão por advogado recomendada antes do lançamento comercial.
 
 ## App móvel
 
