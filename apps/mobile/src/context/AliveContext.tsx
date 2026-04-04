@@ -148,6 +148,29 @@ export function AliveProvider({
     };
   }, []);
 
+  /** Envia já para a nuvem ao ir a segundo plano; ao voltar, puxa estado remoto (outro telemóvel). */
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      const prev = appStateRef.current;
+      appStateRef.current = next;
+      if (next === 'background' || next === 'inactive') {
+        if (pushTimerRef.current) {
+          clearTimeout(pushTimerRef.current);
+          pushTimerRef.current = null;
+        }
+        void pushCloudState(userId, sessionToken);
+      }
+      if (
+        (prev === 'background' || prev === 'inactive') &&
+        next === 'active' &&
+        ready
+      ) {
+        void refresh();
+      }
+    });
+    return () => sub.remove();
+  }, [userId, sessionToken, ready, refresh]);
+
   useEffect(() => {
     if (!ready || !sessionToken) return;
     const dl = deadlineOf(config);
