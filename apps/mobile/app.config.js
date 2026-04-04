@@ -46,7 +46,8 @@ module.exports = {
       ],
     ],
     extra: {
-      serverUrl: process.env.EXPO_PUBLIC_SERVER_URL ?? 'http://localhost:3000',
+      /** Fallback embutido; em dev use EXPO_PUBLIC_SERVER_URL no .env para apontar ao servidor local. */
+      serverUrl: process.env.EXPO_PUBLIC_SERVER_URL ?? 'https://api-ial.cloudive.com.br',
     },
   },
 };

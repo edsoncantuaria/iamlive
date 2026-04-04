@@ -31,7 +31,7 @@ Contas ficam em **MariaDB** (ou MySQL compatível): `DATABASE_URL` (`mysql://…
 ```bash
 cd apps/mobile
 cp .env.example .env
-# EXPO_PUBLIC_SERVER_URL — ex.: https://api.seudominio.com (emulador Android: http://10.0.2.2:PORTA)
+# Opcional: EXPO_PUBLIC_SERVER_URL para API local. Sem isso, o app usa https://api-ial.cloudive.com.br (definido em apps/mobile).
 npm install
 npx expo start
 ```
