@@ -7,11 +7,18 @@ const appJson = require('./app.json');
 /** Builds EAS `production`: só HTTPS. `preview` / dev: defina EXPO_PUBLIC_ANDROID_CLEARTEXT=1 para API HTTP local. */
 const allowAndroidCleartext = process.env.EXPO_PUBLIC_ANDROID_CLEARTEXT === '1';
 
+/** `aps-environment` no iOS: produção só no perfil EAS `production`. */
+const notificationIosMode =
+  process.env.EAS_BUILD_PROFILE === 'production' ? 'production' : 'development';
+
 module.exports = {
   expo: {
     ...appJson.expo,
     ios: {
       ...(appJson.expo.ios || {}),
+      ...(process.env.EXPO_APPLE_TEAM_ID
+        ? { appleTeamId: process.env.EXPO_APPLE_TEAM_ID }
+        : {}),
       bundleIdentifier: 'com.estouvivo.mobile',
       entitlements: {
         'com.apple.security.application-groups': ['group.com.estouvivo.mobile'],
@@ -20,15 +27,33 @@ module.exports = {
         ...((appJson.expo.ios && appJson.expo.ios.infoPlist) || {}),
         NSFaceIDUsageDescription:
           'O Estou Vivo usa Face ID para desbloquear a sua sessão de forma segura.',
+        NSUserNotificationsUsageDescription:
+          'Enviamos lembretes locais antes do prazo do seu check-in, para você confirmar que está bem.',
       },
     },
     android: {
       ...(appJson.expo.android || {}),
       package: 'com.estouvivo.mobile',
       usesCleartextTraffic: allowAndroidCleartext,
+      /** Alarmes em horário exato (lembretes por data). Sem isto o Android pode atrasar notificações. */
+      permissions: [
+        ...((appJson.expo.android && appJson.expo.android.permissions) || []),
+        'android.permission.SCHEDULE_EXACT_ALARM',
+      ],
     },
     plugins: [
       ...((appJson.expo && appJson.expo.plugins) || []),
+      [
+        'expo-notifications',
+        {
+          icon: './assets/icon.png',
+          color: '#052a2c',
+          /** Deve coincidir com o canal em `src/lib/notifications.ts` (FCM/local). */
+          defaultChannel: 'check-in-reminders',
+          mode: notificationIosMode,
+        },
+      ],
+      '@bacons/apple-targets',
       'expo-secure-store',
       [
         'react-native-android-widget',

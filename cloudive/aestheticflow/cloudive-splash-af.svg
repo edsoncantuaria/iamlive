@@ -1,0 +1,58 @@
+<svg viewBox="0 0 280 88" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .bubble {
+      opacity: 0;
+      transform: scale(0.4);
+      transform-origin: center;
+      transform-box: fill-box;
+      animation: fadeScale 1.2s ease-out forwards;
+    }
+
+    .b2 { animation-delay: 0.15s; }
+    .b3 { animation-delay: 0.3s; }
+
+    .pulse {
+      transform-origin: center;
+      transform-box: fill-box;
+      animation: pulse 2.4s 1.4s ease-in-out infinite;
+    }
+
+    .brand-text {
+      opacity: 0;
+      animation: textFade 1.2s 0.9s ease-out forwards;
+    }
+
+    @keyframes fadeScale {
+      0%   { opacity: 0; transform: scale(0.4); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    @keyframes pulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.06); }
+      100% { transform: scale(1); }
+    }
+
+    @keyframes textFade {
+      0%   { opacity: 0; }
+      100% { opacity: 1; }
+    }
+  </style>
+
+  <rect x="0" y="0" width="280" height="88" fill="hsl(330, 10%, 10%)"/>
+
+  <g class="pulse">
+    <circle class="bubble b1" cx="28" cy="42" r="18" fill="hsl(330, 80%, 65%)"/>
+    <circle class="bubble b2" cx="52" cy="34" r="18" fill="hsl(330, 70%, 75%)"/>
+    <circle class="bubble b3" cx="52" cy="58" r="18" fill="hsl(330, 40%, 90%)"/>
+  </g>
+
+  <text class="brand-text" x="95" y="56"
+        font-family="Inter, system-ui, -apple-system, sans-serif"
+        font-size="40"
+        font-weight="600"
+        fill="hsl(330, 20%, 95%)"
+        letter-spacing="1">
+    Cloudive
+  </text>
+</svg>

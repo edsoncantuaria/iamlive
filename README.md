@@ -54,10 +54,18 @@ Workflow manual **EAS Build**: `.github/workflows/eas-build.yml` — requer o se
 
 O fluxo inicial é **início de sessão** com e-mail e senha (biometria no aparelho opcional). O **JWT** vai para `expo-secure-store` e é enviado no handshake do Socket.IO.
 
+### Notificações e widgets (APK / IPA / EAS)
+
+- **Lembretes do app** são **notificações locais** agendadas no aparelho (`expo-notifications`). Não dependem de servidor nem de FCM/APNs para disparar. Com um **development build** ou binário EAS (não use Expo Go no Android para isso), ative as permissões nas configurações do sistema.
+- O plugin **`expo-notifications`** e a permissão Android **`SCHEDULE_EXACT_ALARM`** estão no `app.config.js` para ícone/canal no Android e horários mais fiáveis. No iOS, o texto do pedido de permissão está em `NSUserNotificationsUsageDescription`.
+- **Push remoto** (Expo Push / FCM / APNs para o servidor mandar notificações) **ainda não está ligado ao código**; quando quiser, siga [Push notifications: setup](https://docs.expo.dev/push-notifications/push-notifications-setup/), rode `eas credentials` e associe FCM (Android) e chave APNs (iOS) ao projeto Expo.
+- **Widget Android** (`react-native-android-widget`): após instalar o APK/AAB, adicione o widget **Estou Vivo!** pela gaveta de widgets do launcher; o app atualiza os dados ao abrir e após check-in. **Widget iOS** (`targets/EstouVivoWidget`): o plugin **`@bacons/apple-targets`** entra no prebuild; o IPA precisa do mesmo *bundle id* / *App Group* já definidos (`group.com.estouvivo.mobile`). Defina **`EXPO_APPLE_TEAM_ID`** (Team ID Apple) no `.env` ou nas variáveis do projeto EAS para *signing* do *widget extension*.
+
 ### Testes antes das lojas
 
 - Login, registo, biometria, Socket e WhatsApp em **dispositivo real**
 - **TestFlight** (iOS) e **faixa interna** (Google Play) com o binário `production`
+- Lembretes: marcar um check-in, confirmar permissão de notificações e, no Android, se o fabricante atrasar alarmes, revisar **alarmes e lembretes** / **bateria** para o app
 
 ## Requisitos
 
