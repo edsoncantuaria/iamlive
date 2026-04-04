@@ -18,7 +18,10 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAlive } from '../context/AliveContext';
-import { notificationsUnavailableInExpoGoAndroid } from '../lib/notifications';
+import {
+  notificationsUnavailableInExpoGoAndroid,
+  runNotificationSelfTest,
+} from '../lib/notifications';
 import { DEFAULT_REMINDER_IDS, REMINDER_OPTIONS, type ReminderOffsetId } from '../lib/reminderOffsets';
 import type { AppStackParamList } from '../navigation/types';
 import { useAuth } from '../context/AuthContext';
@@ -276,6 +279,46 @@ export default function SettingsScreen() {
                 <Text style={styles.ghostChipTxt}>Desativar todos</Text>
               </Pressable>
             </View>
+
+            {!notificationsUnavailableInExpoGoAndroid ? (
+              <Pressable
+                style={styles.testNotifBtn}
+                onPress={() => {
+                  void (async () => {
+                    const r = await runNotificationSelfTest();
+                    const lines: string[] = [];
+                    if (r.localOk) {
+                      lines.push('Foi agendada uma notificação local daqui a 2 segundos.');
+                    } else if (r.localError) {
+                      lines.push(`Local: ${r.localError}`);
+                    }
+                    if (r.expoPushToken) {
+                      lines.push(
+                        `Token Expo Push (primeiros caracteres): ${r.expoPushToken.slice(0, 28)}…`,
+                      );
+                    } else if (r.expoPushError) {
+                      lines.push(
+                        `Expo Push (opcional): ${r.expoPushError}\n\nIsto é normal se as credenciais FCM/APNs ainda não estiverem ligadas no EAS.`,
+                      );
+                    }
+                    Alert.alert(
+                      'Teste de notificações',
+                      lines.length > 0
+                        ? lines.join('\n\n')
+                        : 'Nada a reportar.',
+                      [{ text: 'OK' }],
+                    );
+                  })();
+                }}
+              >
+                <Ionicons name="send-outline" size={18} color={colors.darkTeal} />
+                <Text style={styles.testNotifTxt}>Testar notificação (local + Expo Push)</Text>
+              </Pressable>
+            ) : null}
+            <Text style={styles.testNotifHint}>
+              O teste local confirma som e canal no aparelho. O token Expo Push valida o projeto no
+              Expo; o envio pelo vosso servidor ainda não está ligado no código.
+            </Text>
           </View>
 
           {/* Mensagem */}
@@ -597,6 +640,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(44, 122, 123, 0.08)',
   },
   ghostChipTxt: { fontSize: 14, fontWeight: '700', color: colors.darkTeal },
+  testNotifBtn: {
+    marginTop: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 14,
+    backgroundColor: 'rgba(44, 122, 123, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(44, 122, 123, 0.25)',
+  },
+  testNotifTxt: { fontSize: 15, fontWeight: '700', color: colors.darkTeal },
+  testNotifHint: {
+    fontSize: 12,
+    color: '#9ca3af',
+    lineHeight: 18,
+    marginTop: 10,
+  },
   textArea: {
     borderWidth: 1,
     borderColor: '#e5e7eb',

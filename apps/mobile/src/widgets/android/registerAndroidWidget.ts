@@ -1,11 +1,17 @@
 import { Platform } from 'react-native';
 import { registerWidgetTaskHandler } from 'react-native-android-widget';
-import { buildEstouVivoWidgetTree } from './EstouVivoAndroidWidget';
+import {
+  buildEstouVivoMiniTree,
+  buildEstouVivoPainelTree,
+} from './EstouVivoAndroidWidget';
 
 if (Platform.OS === 'android') {
-  registerWidgetTaskHandler(async ({ widgetAction, renderWidget }) => {
+  registerWidgetTaskHandler(async ({ widgetAction, widgetInfo, renderWidget }) => {
     if (widgetAction === 'WIDGET_DELETED') return;
-    const tree = await buildEstouVivoWidgetTree();
+    const tree =
+      widgetInfo.widgetName === 'EstouVivoMini'
+        ? await buildEstouVivoMiniTree()
+        : await buildEstouVivoPainelTree();
     renderWidget(tree);
   });
 }

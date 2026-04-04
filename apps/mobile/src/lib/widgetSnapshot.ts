@@ -8,11 +8,44 @@ export type WidgetSnapshotV1 = {
   subtitle: string;
   line1: string;
   accent: WidgetAccent;
+  /** Ex.: "Check-in a cada 3 dias" */
+  intervalLine: string;
+  /** Ex.: "Limite: 05/04 14:30" */
+  deadlineLine: string;
+  /** Rótulo curto para widget mini / faixa do painel */
+  statusShort: string;
 };
 
 const GROUP_KEY = 'widget_snapshot';
 
 export { GROUP_KEY as WIDGET_SNAPSHOT_KEY };
+
+function deadlineLineFrom(dl: Date): string {
+  try {
+    const d = dl.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    const t = dl.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return `Limite: ${d} ${t}`;
+  } catch {
+    return 'Limite: —';
+  }
+}
+
+function statusShortFrom(st: ReturnType<typeof aliveStatus>): string {
+  switch (st) {
+    case 'neverChecked':
+      return 'Sem check-in';
+    case 'safe':
+      return 'No prazo';
+    case 'warning':
+      return 'Atenção';
+    case 'critical':
+      return 'Urgente';
+    case 'expired':
+      return 'Expirado';
+    default:
+      return '—';
+  }
+}
 
 export function buildWidgetSnapshot(config: AppConfig): WidgetSnapshotV1 {
   const dl = deadlineOf(config);
@@ -22,6 +55,9 @@ export function buildWidgetSnapshot(config: AppConfig): WidgetSnapshotV1 {
       subtitle: 'Faça o check-in no app',
       line1: '—',
       accent: 'empty',
+      intervalLine: `Intervalo: ${config.intervalDays} dia(s)`,
+      deadlineLine: 'Abra o app para começar',
+      statusShort: 'Sem check-in',
     };
   }
 
@@ -55,5 +91,8 @@ export function buildWidgetSnapshot(config: AppConfig): WidgetSnapshotV1 {
     subtitle,
     line1,
     accent,
+    intervalLine: `Check-in a cada ${config.intervalDays} dia(s)`,
+    deadlineLine: deadlineLineFrom(dl),
+    statusShort: statusShortFrom(st),
   };
 }

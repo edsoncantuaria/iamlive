@@ -54,7 +54,7 @@ module.exports = {
         'expo-notifications',
         {
           icon: './assets/icon.png',
-          color: '#052a2c',
+          color: '#0d9488',
           /** Deve coincidir com o canal em `src/lib/notifications.ts` (FCM/local). */
           defaultChannel: 'check-in-reminders',
           mode: notificationIosMode,
@@ -67,13 +67,26 @@ module.exports = {
         {
           widgets: [
             {
+              name: 'EstouVivoMini',
+              label: 'Estou Vivo — compacto',
+              description: 'Contagem e estado em pouco espaço (2×1)',
+              minWidth: '155dp',
+              minHeight: '48dp',
+              targetCellWidth: 2,
+              targetCellHeight: 1,
+              resizeMode: 'horizontal',
+              previewImage: './assets/icon.png',
+              updatePeriodMillis: 1800000,
+            },
+            {
               name: 'EstouVivo',
-              label: 'Estou Vivo!',
-              description: 'Contagem até o próximo check-in',
-              minWidth: '260dp',
+              label: 'Estou Vivo — painel',
+              description: 'Prazo, intervalo e detalhes (4×2)',
+              minWidth: '250dp',
               minHeight: '110dp',
               targetCellWidth: 4,
               targetCellHeight: 2,
+              resizeMode: 'horizontal|vertical',
               previewImage: './assets/icon.png',
               updatePeriodMillis: 1800000,
             },

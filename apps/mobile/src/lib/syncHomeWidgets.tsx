@@ -25,10 +25,16 @@ export async function syncHomeWidgetsFromConfig(config: AppConfig): Promise<void
   if (Platform.OS === 'android') {
     try {
       const { requestWidgetUpdate } = await import('react-native-android-widget');
-      const { buildEstouVivoWidgetTree } = await import('../widgets/android/EstouVivoAndroidWidget');
+      const { buildEstouVivoMiniTree, buildEstouVivoPainelTree } = await import(
+        '../widgets/android/EstouVivoAndroidWidget'
+      );
       await requestWidgetUpdate({
         widgetName: 'EstouVivo',
-        renderWidget: () => buildEstouVivoWidgetTree(),
+        renderWidget: () => buildEstouVivoPainelTree(),
+      });
+      await requestWidgetUpdate({
+        widgetName: 'EstouVivoMini',
+        renderWidget: () => buildEstouVivoMiniTree(),
       });
     } catch {
       // Dev client sem widget ou erro de bridge

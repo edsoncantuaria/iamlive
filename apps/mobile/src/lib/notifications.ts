@@ -130,3 +130,70 @@ export async function scheduleReminders(dl: Date): Promise<void> {
     console.warn('Agendar lembretes:', e);
   }
 }
+
+export type NotificationSelfTestResult = {
+  localOk: boolean;
+  localError?: string;
+  /** Token Expo Push (só em build nativo com credenciais EAS); pode falhar mesmo assim. */
+  expoPushToken?: string;
+  expoPushError?: string;
+};
+
+/**
+ * Agenda uma notificação local quase imediata e tenta obter token Expo Push (teste de canal / projeto).
+ * Push remoto pelo vosso servidor ainda não está ligado ao backend — o token serve para validar credenciais no Expo.
+ */
+export async function runNotificationSelfTest(): Promise<NotificationSelfTestResult> {
+  if (notificationsUnavailableInExpoGoAndroid) {
+    return {
+      localOk: false,
+      localError: 'Indisponível no Expo Go para Android. Use um build de desenvolvimento ou EAS.',
+    };
+  }
+
+  const out: NotificationSelfTestResult = { localOk: false };
+
+  try {
+    await ensureAndroidReminderChannel();
+    const perm = await Notifications.getPermissionsAsync();
+    if (perm.status !== 'granted') {
+      const req = await Notifications.requestPermissionsAsync();
+      if (req.status !== 'granted') {
+        return {
+          localOk: false,
+          localError: 'Permissão de notificações negada. Ative nas definições do sistema.',
+        };
+      }
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      identifier: 'self-test-local',
+      content: {
+        title: 'Estou Vivo — teste',
+        body: 'Notificação local de teste. Se viu isto, o canal no aparelho está a funcionar.',
+        ...(Platform.OS === 'android' ? { channelId: REMINDER_CHANNEL } : {}),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: 2,
+      },
+    });
+    out.localOk = true;
+  } catch (e) {
+    out.localError = e instanceof Error ? e.message : String(e);
+  }
+
+  try {
+    const projectId =
+      (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas
+        ?.projectId;
+    if (projectId && Platform.OS !== 'web') {
+      const token = await Notifications.getExpoPushTokenAsync({ projectId });
+      out.expoPushToken = token.data;
+    }
+  } catch (e) {
+    out.expoPushError = e instanceof Error ? e.message : String(e);
+  }
+
+  return out;
+}
