@@ -77,6 +77,10 @@ module.exports = {
     extra: {
       /** Fallback embutido; em dev use EXPO_PUBLIC_SERVER_URL no .env para apontar ao servidor local. */
       serverUrl: process.env.EXPO_PUBLIC_SERVER_URL ?? 'https://api-ial.cloudive.com.br',
+      /** Ligado ao projeto Expo (EAS não consegue escrever em app.config.js automaticamente). */
+      eas: {
+        projectId: 'c5e8c7ee-5d10-4614-881e-575b1e7e3046',
+      },
     },
   },
 };
