@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Splash nativo: marca Cloudive (empresa), fundo e cores Estou Vivo. Export -> splash-icon.png -->
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1024" height="1024" fill="#052a2c"/>
+  <g transform="translate(232, 424) scale(2)">
+    <circle cx="28" cy="42" r="18" fill="#4ECDC4"/>
+    <circle cx="52" cy="34" r="18" fill="#3dd4c8"/>
+    <circle cx="52" cy="58" r="18" fill="#dcefed"/>
+    <text x="95" y="56"
+          font-family="system-ui, -apple-system, Segoe UI, sans-serif"
+          font-size="40"
+          font-weight="600"
+          fill="#F7FFF7"
+          letter-spacing="1">
+      Cloudive
+    </text>
+  </g>
+</svg>
