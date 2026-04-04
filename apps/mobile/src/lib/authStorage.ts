@@ -9,7 +9,7 @@ async function shouldProtectTokenWithBiometric(): Promise<boolean> {
   const raw = await AsyncStorage.getItem(PREF_BIOMETRIC_TOKEN);
   if (raw === '0') return false;
   if (raw === '1') return true;
-  return isBiometricLoginAvailable();
+  return await isBiometricLoginAvailable();
 }
 
 export async function getUseBiometricForToken(): Promise<boolean> {

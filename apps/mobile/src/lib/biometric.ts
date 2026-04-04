@@ -4,7 +4,7 @@ import * as LocalAuthentication from 'expo-local-authentication';
 export async function isBiometricLoginAvailable(): Promise<boolean> {
   const hasHardware = await LocalAuthentication.hasHardwareAsync();
   if (!hasHardware) return false;
-  return LocalAuthentication.isEnrolledAsync();
+  return await LocalAuthentication.isEnrolledAsync();
 }
 
 export const BIOMETRIC_UNLOCK_PROMPT = 'Desbloquear o Estou Vivo';
