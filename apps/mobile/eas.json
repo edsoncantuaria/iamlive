@@ -22,6 +22,14 @@
         "EXPO_PUBLIC_ANDROID_CLEARTEXT": "1"
       }
     },
+    "apk": {
+      "distribution": "internal",
+      "channel": "preview",
+      "android": { "buildType": "apk" },
+      "env": {
+        "EXPO_PUBLIC_ANDROID_CLEARTEXT": "1"
+      }
+    },
     "production": {
       "channel": "production",
       "autoIncrement": true,

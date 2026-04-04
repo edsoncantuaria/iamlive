@@ -5,6 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'node:url';
 import { Server, type Socket } from 'socket.io';
 import { createAuthRouter } from './auth/router.js';
+import { createSyncRouter } from './sync/router.js';
 import { verifyAccessToken } from './auth/tokens.js';
 import { createDb } from './db.js';
 import {
@@ -43,13 +44,14 @@ async function main() {
   configureTrustProxy(app);
   app.use(securityHeaders());
   app.use(corsMiddleware());
-  app.use(express.json({ limit: '24kb' }));
+  app.use(express.json({ limit: '512kb' }));
 
   app.get('/health', (_req, res) => {
     res.json({ ok: true });
   });
 
-  app.use('/auth', createAuthRouter(db, jwtSecret));
+  app.use('/auth', createAuthRouter(db, jwtSecret, PUBLIC_ORIGIN));
+  app.use('/sync', createSyncRouter(db, jwtSecret));
 
   app.get('/legal/privacy', (_req, res) => {
     res.type('html').send(privacyPageHtml(PUBLIC_ORIGIN));

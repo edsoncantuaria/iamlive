@@ -4,7 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from '../context/AuthContext';
-import { AliveProvider } from '../context/AliveContext';
+import { AliveProvider, useAlive } from '../context/AliveContext';
 import type { AppStackParamList, AuthStackParamList } from './types';
 import HomeScreen from '../screens/HomeScreen';
 import ContactsScreen from '../screens/ContactsScreen';
@@ -14,6 +14,8 @@ import OnboardingScreen from '../screens/OnboardingScreen';
 import * as storage from '../lib/storage';
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
+import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
+import ResetPasswordScreen from '../screens/auth/ResetPasswordScreen';
 import LegalWebScreen from '../screens/auth/LegalWebScreen';
 import { CloudiveIntroSplash, CloudiveLoadingScreen } from '../components/cloudive';
 
@@ -33,19 +35,27 @@ function AuthNavigator() {
     >
       <AuthStack.Screen name="Login" component={LoginScreen} />
       <AuthStack.Screen name="Register" component={RegisterScreen} />
+      <AuthStack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
+      <AuthStack.Screen name="ResetPassword" component={ResetPasswordScreen} />
       <AuthStack.Screen name="Legal" component={LegalWebScreen} />
     </AuthStack.Navigator>
   );
 }
 
-function AppNavigator() {
+function AppNavigator({ userId }: { userId: string }) {
+  const { ready: aliveReady } = useAlive();
   const [boot, setBoot] = useState<'loading' | 'ready'>('loading');
   const [initialRoute, setInitialRoute] = useState<'Home' | 'Onboarding'>('Home');
 
   useEffect(() => {
+    setBoot('loading');
+  }, [userId]);
+
+  useEffect(() => {
+    if (!aliveReady) return;
     let cancelled = false;
     (async () => {
-      const done = await storage.loadOnboardingCompleted();
+      const done = await storage.loadOnboardingCompleted(userId);
       if (!cancelled) {
         setInitialRoute(done ? 'Home' : 'Onboarding');
         setBoot('ready');
@@ -54,9 +64,9 @@ function AppNavigator() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [aliveReady, userId]);
 
-  if (boot === 'loading') {
+  if (!aliveReady || boot === 'loading') {
     return <CloudiveLoadingScreen message="Carregando…" />;
   }
 
@@ -110,8 +120,8 @@ function Gate() {
   }
 
   return (
-    <AliveProvider sessionToken={session.accessToken}>
-      <AppNavigator />
+    <AliveProvider userId={session.user.id} sessionToken={session.accessToken}>
+      <AppNavigator userId={session.user.id} />
     </AliveProvider>
   );
 }

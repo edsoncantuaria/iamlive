@@ -100,7 +100,7 @@ function reminderCopy(id: ReminderOffsetId): { title: string; body: string } {
 /**
  * Agenda notificações locais conforme preferências salvas, antes do limite `dl`.
  */
-export async function scheduleReminders(dl: Date): Promise<void> {
+export async function scheduleReminders(dl: Date, userId: string): Promise<void> {
   if (notificationsUnavailableInExpoGoAndroid) {
     return;
   }
@@ -108,7 +108,7 @@ export async function scheduleReminders(dl: Date): Promise<void> {
     await ensureAndroidReminderChannel();
     await Notifications.cancelAllScheduledNotificationsAsync();
     const now = Date.now();
-    const enabled = new Set(await loadReminderIds());
+    const enabled = new Set(await loadReminderIds(userId));
 
     for (const opt of REMINDER_OPTIONS) {
       if (!enabled.has(opt.id)) continue;

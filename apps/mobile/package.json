@@ -8,8 +8,11 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "splash:cloudive": "node scripts/export-cloudive-splash.js",
+    "icons:export": "node scripts/export-app-icons.js",
     "eas:development": "eas build --profile development",
     "eas:preview": "eas build --profile preview",
+    "eas:preview:android": "eas build -p android --profile preview",
+    "eas:preview:ios": "eas build -p ios --profile preview",
     "eas:production": "eas build --profile production",
     "eas:submit": "eas submit --profile production"
   },

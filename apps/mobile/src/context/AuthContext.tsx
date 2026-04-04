@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import { authLogin, authMe, authRegister } from '../lib/api';
 import * as authStorage from '../lib/authStorage';
+import * as storage from '../lib/storage';
 import { disconnectSocket } from '../socket';
 
 export type Session = {
@@ -49,9 +50,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     try {
       const me = await authMe(token);
+      await storage.setActiveUserId(me.user.id);
       setSession({ accessToken: token, user: me.user });
     } catch {
       await authStorage.clearAccessToken();
+      await storage.clearActiveUserId();
       setSession(null);
     }
   }, []);
@@ -76,6 +79,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const abandonBiometricUnlock = useCallback(async () => {
     await authStorage.setUseBiometricForToken(false);
     await authStorage.clearAccessToken();
+    await storage.clearActiveUserId();
     setBiometricUnlockFailed(false);
     setSession(null);
   }, []);
@@ -83,12 +87,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     const r = await authLogin(email, password);
     await authStorage.setAccessToken(r.accessToken);
+    await storage.setActiveUserId(r.user.id);
     setSession({ accessToken: r.accessToken, user: r.user });
   }, []);
 
   const register = useCallback(async (email: string, password: string) => {
     const r = await authRegister(email, password);
     await authStorage.setAccessToken(r.accessToken);
+    await storage.setActiveUserId(r.user.id);
     setSession({ accessToken: r.accessToken, user: r.user });
   }, []);
 
@@ -96,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     disconnectSocket();
     setBiometricUnlockFailed(false);
     await authStorage.clearAccessToken();
+    await storage.clearActiveUserId();
     setSession(null);
   }, []);
 

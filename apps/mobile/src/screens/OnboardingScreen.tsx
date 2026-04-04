@@ -13,6 +13,8 @@ import { CommonActions, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as storage from '../lib/storage';
+import { useAuth } from '../context/AuthContext';
+import { useAlive } from '../context/AliveContext';
 import type { AppStackParamList } from '../navigation/types';
 import { colors, gradients } from '../theme';
 
@@ -51,15 +53,19 @@ const STEPS = [
 
 export default function OnboardingScreen() {
   const navigation = useNavigation<Nav>();
+  const { session } = useAuth();
+  const { queueCloudSync } = useAlive();
   const insets = useSafeAreaInsets();
   const [index, setIndex] = useState(0);
   const step = STEPS[index];
   const isLast = index === STEPS.length - 1;
 
   const finish = useCallback(async () => {
-    await storage.saveOnboardingCompleted();
+    const uid = session?.user.id;
+    if (uid) await storage.saveOnboardingCompleted(uid);
+    queueCloudSync();
     navigation.dispatch(CommonActions.reset({ index: 0, routes: [{ name: 'Home' }] }));
-  }, [navigation]);
+  }, [navigation, queueCloudSync, session?.user.id]);
 
   const openWhatsApp = useCallback(() => {
     navigation.navigate('WhatsApp');

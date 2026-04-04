@@ -139,6 +139,13 @@ export default function LoginScreen() {
 
             <Pressable
               style={styles.linkBtn}
+              onPress={() => navigation.navigate('ForgotPassword')}
+              disabled={busy || biometricUnlockFailed}
+            >
+              <Text style={[styles.linkTxt, styles.linkMuted]}>Esqueci a senha</Text>
+            </Pressable>
+            <Pressable
+              style={styles.linkBtn}
               onPress={() => navigation.navigate('Register')}
               disabled={busy || biometricUnlockFailed}
             >
@@ -222,8 +229,9 @@ const styles = StyleSheet.create({
   primaryBtnDisabled: { opacity: 0.55 },
   primaryGrad: { paddingVertical: 15, alignItems: 'center' },
   primaryTxt: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  linkBtn: { marginTop: 20, alignItems: 'center' },
+  linkBtn: { marginTop: 16, alignItems: 'center' },
   linkTxt: { fontSize: 15, fontWeight: '700', color: colors.darkTeal },
+  linkMuted: { fontSize: 14, fontWeight: '600', color: colors.warmGray },
   legalRow: {
     flexDirection: 'row',
     justifyContent: 'center',

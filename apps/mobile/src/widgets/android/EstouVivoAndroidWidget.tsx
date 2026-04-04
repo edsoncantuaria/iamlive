@@ -2,7 +2,12 @@ import React from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { ColorProp } from 'react-native-android-widget';
 import { FlexWidget, TextWidget } from 'react-native-android-widget';
-import { WIDGET_SNAPSHOT_KEY, type WidgetSnapshotV1 } from '../../lib/widgetSnapshot';
+import {
+  ACTIVE_USER_ID_KEY,
+  WIDGET_SNAPSHOT_KEY,
+  widgetSnapshotKeyForUser,
+} from '../../lib/storage';
+import type { WidgetSnapshotV1 } from '../../lib/widgetSnapshot';
 
 const BG: Record<WidgetSnapshotV1['accent'], ColorProp> = {
   safe: '#E8F7F4',
@@ -64,6 +69,15 @@ function parse(raw: string | null): WidgetSnapshotV1 {
   }
 }
 
+async function loadSnapshotRaw(): Promise<string | null> {
+  const uid = await AsyncStorage.getItem(ACTIVE_USER_ID_KEY);
+  if (uid) {
+    const scoped = await AsyncStorage.getItem(widgetSnapshotKeyForUser(uid));
+    if (scoped) return scoped;
+  }
+  return AsyncStorage.getItem(WIDGET_SNAPSHOT_KEY);
+}
+
 const fill: React.ComponentProps<typeof FlexWidget>['style'] = {
   width: 'match_parent',
   height: 'match_parent',
@@ -73,7 +87,7 @@ const fill: React.ComponentProps<typeof FlexWidget>['style'] = {
  * Widget compacto (2×1): contagem + estado curto.
  */
 export async function buildEstouVivoMiniTree() {
-  const raw = await AsyncStorage.getItem(WIDGET_SNAPSHOT_KEY);
+  const raw = await loadSnapshotRaw();
   const snap = parse(raw);
   const bg = BG[snap.accent];
   const fg = FG[snap.accent];
@@ -126,7 +140,7 @@ export async function buildEstouVivoMiniTree() {
  * Widget painel (4×2): mais contexto e leitura confortável.
  */
 export async function buildEstouVivoPainelTree() {
-  const raw = await AsyncStorage.getItem(WIDGET_SNAPSHOT_KEY);
+  const raw = await loadSnapshotRaw();
   const snap = parse(raw);
   const bg = BG[snap.accent];
   const fg = FG[snap.accent];

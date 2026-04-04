@@ -4,12 +4,14 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
-import { Alert } from 'react-native';
+import { Alert, AppState } from 'react-native';
 import type { AppConfig, EmergencyContact } from '../lib/appState';
 import { DEFAULT_REMINDER_IDS, type ReminderOffsetId } from '../lib/reminderOffsets';
 import { aliveStatus, deadlineOf, isExpired } from '../lib/appState';
+import { pushCloudState, runCloudSync } from '../lib/cloudSync';
 import { requestNotificationPermissionsSafe, scheduleReminders } from '../lib/notifications';
 import { syncHomeWidgetsFromConfig } from '../lib/syncHomeWidgets';
 import * as storage from '../lib/storage';
@@ -56,14 +58,18 @@ type Ctx = {
   updateContact: (i: number, c: EmergencyContact) => Promise<void>;
   removeContact: (i: number) => Promise<void>;
   refresh: () => Promise<void>;
+  /** Agenda envio do estado local para a nuvem (debounce). */
+  queueCloudSync: () => void;
 };
 
 const AliveContext = createContext<Ctx | null>(null);
 
 export function AliveProvider({
+  userId,
   sessionToken,
   children,
 }: {
+  userId: string;
   sessionToken: string;
   children: React.ReactNode;
 }) {
@@ -76,39 +82,71 @@ export function AliveProvider({
   const [contacts, setContacts] = useState<EmergencyContact[]>([]);
   const [reminderIds, setReminderIdsState] = useState<ReminderOffsetId[]>([...DEFAULT_REMINDER_IDS]);
 
+  const pushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const appStateRef = useRef(AppState.currentState);
+
+  const scheduleCloudPush = useCallback(() => {
+    if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
+    pushTimerRef.current = setTimeout(() => {
+      pushTimerRef.current = null;
+      void pushCloudState(userId, sessionToken);
+    }, 1100);
+  }, [userId, sessionToken]);
+
+  const queueCloudSync = useCallback(() => {
+    scheduleCloudPush();
+  }, [scheduleCloudPush]);
+
   const refresh = useCallback(async () => {
+    await storage.migrateLegacyToUser(userId);
+    await runCloudSync(userId, sessionToken);
     const [c, ct, rid] = await Promise.all([
-      storage.loadConfig(),
-      storage.loadContacts(),
-      storage.loadReminderIds(),
+      storage.loadConfig(userId),
+      storage.loadContacts(userId),
+      storage.loadReminderIds(userId),
     ]);
     setConfig(c);
     setContacts(ct);
     setReminderIdsState(rid);
     const dl = deadlineOf(c);
     if (dl && c.lastCheckIn) {
-      await scheduleReminders(dl);
+      await scheduleReminders(dl, userId);
     }
-    await syncHomeWidgetsFromConfig(c);
-  }, []);
+    await syncHomeWidgetsFromConfig(c, userId);
+  }, [userId, sessionToken]);
 
-  const setReminderIds = useCallback(async (ids: ReminderOffsetId[]) => {
-    await storage.saveReminderIds(ids);
-    setReminderIdsState(ids);
-    const c = await storage.loadConfig();
-    const dl = deadlineOf(c);
-    if (dl && c.lastCheckIn) {
-      await scheduleReminders(dl);
-    }
-  }, []);
+  const setReminderIds = useCallback(
+    async (ids: ReminderOffsetId[]) => {
+      await storage.saveReminderIds(userId, ids);
+      setReminderIdsState(ids);
+      const c = await storage.loadConfig(userId);
+      const dl = deadlineOf(c);
+      if (dl && c.lastCheckIn) {
+        await scheduleReminders(dl, userId);
+      }
+      scheduleCloudPush();
+    },
+    [userId, scheduleCloudPush],
+  );
 
   useEffect(() => {
+    let cancelled = false;
+    setReady(false);
     (async () => {
       await requestNotificationPermissionsSafe();
       await refresh();
-      setReady(true);
+      if (!cancelled) setReady(true);
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [refresh]);
+
+  useEffect(() => {
+    return () => {
+      if (pushTimerRef.current) clearTimeout(pushTimerRef.current);
+    };
+  }, []);
 
   useEffect(() => {
     if (!ready || !sessionToken) return;
@@ -118,7 +156,7 @@ export function AliveProvider({
     let cancelled = false;
 
     (async () => {
-      const sent = await storage.getEmergencySentDeadline();
+      const sent = await storage.getEmergencySentDeadline(userId);
       if (sent === dl.getTime()) return;
 
       try {
@@ -139,7 +177,8 @@ export function AliveProvider({
           );
         });
         if (cancelled) return;
-        await storage.setEmergencySentDeadline(dl.getTime());
+        await storage.setEmergencySentDeadline(userId, dl.getTime());
+        scheduleCloudPush();
       } catch (e) {
         if (cancelled) return;
         Alert.alert('Não foi possível avisar os contatos', emergencySendUserMessage(e));
@@ -149,48 +188,55 @@ export function AliveProvider({
     return () => {
       cancelled = true;
     };
-  }, [ready, sessionToken, config, contacts]);
+  }, [ready, sessionToken, userId, config, contacts, scheduleCloudPush]);
 
   const checkIn = useCallback(async () => {
     const now = new Date();
-    await storage.saveLastCheckIn(now);
-    await storage.clearEmergencySent();
-    const c = await storage.loadConfig();
+    await storage.saveLastCheckIn(userId, now);
+    await storage.clearEmergencySent(userId);
+    const c = await storage.loadConfig(userId);
     setConfig(c);
     const dl = deadlineOf(c);
-    if (dl) await scheduleReminders(dl);
-    await syncHomeWidgetsFromConfig(c);
-  }, []);
+    if (dl) await scheduleReminders(dl, userId);
+    await syncHomeWidgetsFromConfig(c, userId);
+    scheduleCloudPush();
+  }, [userId, scheduleCloudPush]);
 
   const setIntervalDays = useCallback(
     async (n: number) => {
       const next = { ...config, intervalDays: n };
-      await storage.saveIntervalDays(n);
+      await storage.saveIntervalDays(userId, n);
       setConfig(next);
       const dl = deadlineOf(next);
-      if (dl && next.lastCheckIn) await scheduleReminders(dl);
-      await syncHomeWidgetsFromConfig(next);
+      if (dl && next.lastCheckIn) await scheduleReminders(dl, userId);
+      await syncHomeWidgetsFromConfig(next, userId);
+      scheduleCloudPush();
     },
-    [config],
+    [config, userId, scheduleCloudPush],
   );
 
-  const setMessage = useCallback(async (s: string) => {
-    await storage.saveMessage(s);
-    setConfig((c) => ({ ...c, emergencyMessage: s }));
-  }, []);
+  const setMessage = useCallback(
+    async (s: string) => {
+      await storage.saveMessage(userId, s);
+      setConfig((c) => ({ ...c, emergencyMessage: s }));
+      scheduleCloudPush();
+    },
+    [userId, scheduleCloudPush],
+  );
 
   const addContact = useCallback(
     async (c: EmergencyContact, sendWelcomeWhatsApp: boolean) => {
       if (contacts.length >= 2) return;
       const next = [...contacts, c];
-      await storage.saveContacts(next);
+      await storage.saveContacts(userId, next);
       setContacts(next);
+      scheduleCloudPush();
       if (!sendWelcomeWhatsApp) return;
       void sendWelcomeNoticeToContact(sessionToken, c).catch((e) => {
         Alert.alert('Contato salvo', welcomeSendUserMessage(e));
       });
     },
-    [contacts, sessionToken],
+    [contacts, sessionToken, userId, scheduleCloudPush],
   );
 
   const updateContact = useCallback(
@@ -198,20 +244,22 @@ export function AliveProvider({
       if (i < 0 || i >= contacts.length) return;
       const next = contacts.slice();
       next[i] = c;
-      await storage.saveContacts(next);
+      await storage.saveContacts(userId, next);
       setContacts(next);
+      scheduleCloudPush();
     },
-    [contacts],
+    [contacts, userId, scheduleCloudPush],
   );
 
   const removeContact = useCallback(
     async (i: number) => {
       if (i < 0 || i >= contacts.length) return;
       const next = contacts.filter((_, j) => j !== i);
-      await storage.saveContacts(next);
+      await storage.saveContacts(userId, next);
       setContacts(next);
+      scheduleCloudPush();
     },
-    [contacts],
+    [contacts, userId, scheduleCloudPush],
   );
 
   const value = useMemo(
@@ -228,6 +276,7 @@ export function AliveProvider({
       updateContact,
       removeContact,
       refresh,
+      queueCloudSync,
     }),
     [
       ready,
@@ -242,6 +291,7 @@ export function AliveProvider({
       updateContact,
       removeContact,
       refresh,
+      queueCloudSync,
     ],
   );
 

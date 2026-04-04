@@ -1,14 +1,19 @@
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AppConfig } from './appState';
-import { buildWidgetSnapshot, WIDGET_SNAPSHOT_KEY } from './widgetSnapshot';
+import { buildWidgetSnapshot } from './widgetSnapshot';
+import { widgetSnapshotKeyForUser } from './storage';
 
 const APP_GROUP = 'group.com.estouvivo.mobile';
 
-export async function syncHomeWidgetsFromConfig(config: AppConfig): Promise<void> {
+export async function syncHomeWidgetsFromConfig(
+  config: AppConfig,
+  userId: string,
+): Promise<void> {
   const snap = buildWidgetSnapshot(config);
   const json = JSON.stringify(snap);
-  await AsyncStorage.setItem(WIDGET_SNAPSHOT_KEY, json);
+  const storageKey = widgetSnapshotKeyForUser(userId);
+  await AsyncStorage.setItem(storageKey, json);
 
   if (Platform.OS === 'ios') {
     try {

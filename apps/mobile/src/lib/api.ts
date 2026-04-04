@@ -33,3 +33,24 @@ export async function authRegister(email: string, password: string): Promise<Aut
   if (!r.ok) throw new Error('error' in j ? j.error : 'Não foi possível criar a conta');
   return j as AuthOkResponse;
 }
+
+export type ForgotPasswordResponse = { ok: boolean; message?: string };
+
+export async function authForgotPassword(email: string): Promise<ForgotPasswordResponse> {
+  const r = await fetch(`${SERVER_URL}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.trim() }),
+  });
+  return r.json() as Promise<ForgotPasswordResponse>;
+}
+
+export async function authResetPassword(token: string, password: string): Promise<void> {
+  const r = await fetch(`${SERVER_URL}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token: token.trim(), password }),
+  });
+  const j = (await r.json()) as { ok?: boolean; error?: string };
+  if (!r.ok) throw new Error(j.error ?? 'Não foi possível redefinir a senha');
+}

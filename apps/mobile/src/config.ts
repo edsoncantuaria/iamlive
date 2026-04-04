@@ -9,7 +9,10 @@ type Extra = {
 
 const extra = Constants.expoConfig?.extra as Extra | undefined;
 
-export const SERVER_URL =
-  process.env.EXPO_PUBLIC_SERVER_URL ??
-  extra?.serverUrl ??
-  DEFAULT_SERVER_URL;
+function normalizeApiBase(url: string): string {
+  return url.trim().replace(/\/+$/, '');
+}
+
+export const SERVER_URL = normalizeApiBase(
+  process.env.EXPO_PUBLIC_SERVER_URL ?? extra?.serverUrl ?? DEFAULT_SERVER_URL,
+);

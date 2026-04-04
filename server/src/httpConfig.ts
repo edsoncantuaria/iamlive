@@ -49,3 +49,12 @@ export const authRegisterLimiter = rateLimit({
   legacyHeaders: false,
   message: { error: 'Muitos registros a partir deste endereço. Tente mais tarde.' },
 });
+
+/** Pedidos de recuperação de senha por IP. */
+export const authForgotPasswordLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: Math.max(3, Number(process.env.AUTH_FORGOT_RATE_LIMIT_MAX ?? 10)),
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Muitos pedidos de recuperação. Tente mais tarde.' },
+});

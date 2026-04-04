@@ -16,9 +16,8 @@ export type WidgetSnapshotV1 = {
   statusShort: string;
 };
 
-const GROUP_KEY = 'widget_snapshot';
-
-export { GROUP_KEY as WIDGET_SNAPSHOT_KEY };
+/** @deprecated use widgetSnapshotKeyForUser em storage.ts */
+export const WIDGET_SNAPSHOT_KEY = 'widget_snapshot';
 
 function deadlineLineFrom(dl: Date): string {
   try {
