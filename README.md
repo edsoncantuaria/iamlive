@@ -24,19 +24,40 @@ npm install
 npm run dev
 ```
 
-Contas ficam em **MariaDB** (ou MySQL compatível): `DATABASE_URL` (`mysql://…`) ou `MYSQL_HOST` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_DATABASE`. A tabela `users` é criada na primeira subida. Cada usuário autenticado tem pasta própria em `data/auth/<userId>/` (ou `AUTH_DIR`) para a sessão **Baileys**. HTML de **privacidade** e **termos** em `GET /legal/privacy` e `GET /legal/terms` (revisar texto juridicamente antes das lojas).
+Contas ficam em **MariaDB** (ou MySQL compatível): `DATABASE_URL` (`mysql://…`) ou `MYSQL_HOST` / `MYSQL_USER` / `MYSQL_PASSWORD` / `MYSQL_DATABASE`. A tabela `users` é criada na primeira subida. Cada usuário autenticado tem pasta própria em `data/auth/<userId>/` (ou `AUTH_DIR`) para a sessão **Baileys**.
+
+**Documentos legais (LGPD + termos em PT-BR):** `GET /legal/privacy` e `GET /legal/terms`. Configure no `.env` as variáveis `LEGAL_OPERATOR_NAME`, `LEGAL_CONTACT_EMAIL` e, quando aplicável, `LEGAL_OPERATOR_CNPJ`, `LEGAL_ADDRESS`, `LEGAL_DPO_EMAIL` para identificação completa do controlador. `PUBLIC_ORIGIN` deve ser a URL pública (ex.: `https://api-ial.cloudive.com.br`). Revisão por advogado recomendada antes do lançamento comercial.
 
 ## App móvel
 
 ```bash
 cd apps/mobile
 cp .env.example .env
-# Opcional: EXPO_PUBLIC_SERVER_URL para API local. Sem isso, o app usa https://api-ial.cloudive.com.br (definido em apps/mobile).
+# Opcional: EXPO_PUBLIC_SERVER_URL para API local. Sem isso, o app usa https://api-ial.cloudive.com.br.
+# Só para HTTP em Android (LAN): EXPO_PUBLIC_ANDROID_CLEARTEXT=1 — builds EAS preview/development já sugerem isso; produção fica só HTTPS.
 npm install
 npx expo start
 ```
 
-O fluxo inicial é **início de sessão** com e-mail e senha (biometria no aparelho opcional para proteger o token). O **JWT** vai para `expo-secure-store` e é enviado no handshake do Socket.IO.
+### EAS (builds para lojas)
+
+1. `npm install -g eas-cli` e `eas login`
+2. `cd apps/mobile && eas init` (associa o projeto e grava o `projectId`)
+3. `npm run eas:preview` — APK interno (Android) com tráfego HTTP permitido se precisar de API local
+4. `npm run eas:production` — AAB (Android) / IPA para submissão; **sem** cleartext por defeito
+
+Metadados sugeridos (Play / Apple / Data Safety): pasta **`apps/mobile/store/`**. Submissão: **`store/SUBMIT.md`**.
+
+### CI
+
+Workflow manual **EAS Build**: `.github/workflows/eas-build.yml` — requer o segredo **`EXPO_TOKEN`** no GitHub (criar em [expo.dev](https://expo.dev) → Access Tokens).
+
+O fluxo inicial é **início de sessão** com e-mail e senha (biometria no aparelho opcional). O **JWT** vai para `expo-secure-store` e é enviado no handshake do Socket.IO.
+
+### Testes antes das lojas
+
+- Login, registo, biometria, Socket e WhatsApp em **dispositivo real**
+- **TestFlight** (iOS) e **faixa interna** (Google Play) com o binário `production`
 
 ## Requisitos
 

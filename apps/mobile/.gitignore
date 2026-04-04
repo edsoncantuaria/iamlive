@@ -42,3 +42,8 @@ yarn-error.*
 
 .env
 
+# Credenciais de loja (nunca commitar)
+store/google-play-service-account.json
+store/**/*.p8
+store/**/*.pem
+

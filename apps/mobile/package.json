@@ -6,7 +6,11 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "eas:development": "eas build --profile development",
+    "eas:preview": "eas build --profile preview",
+    "eas:production": "eas build --profile production",
+    "eas:submit": "eas submit --profile production"
   },
   "dependencies": {
     "@bacons/apple-targets": "^4.0.6",

@@ -4,6 +4,9 @@
  */
 const appJson = require('./app.json');
 
+/** Builds EAS `production`: só HTTPS. `preview` / dev: defina EXPO_PUBLIC_ANDROID_CLEARTEXT=1 para API HTTP local. */
+const allowAndroidCleartext = process.env.EXPO_PUBLIC_ANDROID_CLEARTEXT === '1';
+
 module.exports = {
   expo: {
     ...appJson.expo,
@@ -22,6 +25,7 @@ module.exports = {
     android: {
       ...(appJson.expo.android || {}),
       package: 'com.estouvivo.mobile',
+      usesCleartextTraffic: allowAndroidCleartext,
     },
     plugins: [
       ...((appJson.expo && appJson.expo.plugins) || []),
